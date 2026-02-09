@@ -237,20 +237,25 @@ fun FlangeFormScreen(
         null
     }
 
+    val specifiedTorqueValue = specifiedTargetTorque.toDoubleOrNull()
+    val usingSpecifiedTorque = specifiedTorqueValue != null
+
     val calculationIssues = buildList {
-        if (referenceData == null) add("Reference data not loaded")
-        if (diameterIn == null) add("Diameter is required")
-        if (threadSeries.isBlank()) add("Thread series is required")
-        if (tpi == null) add("TPI not available for selected diameter/thread series")
-        if (asIn2 == null) add("Tensile stress area unavailable for selected diameter/thread series")
-        if (gradeKey == null) add("Bolt grade is required for calculation")
-        if (strengthKsi == null) add("Strength not available for selected grade/diameter")
-        if (usingAllowable && workingTemp == null) add("Working temperature is required")
-        if (!requiresSpecifiedTorque && methodIsUserInput && targetBoltLoadF.toDoubleOrNull() == null) {
-            add("Target bolt load F is required")
-        }
-        if (!requiresSpecifiedTorque && !methodIsUserInput && pctYield == null) {
-            add("Percent yield is required")
+        if (!usingSpecifiedTorque) {
+            if (referenceData == null) add("Reference data not loaded")
+            if (diameterIn == null) add("Diameter is required")
+            if (threadSeries.isBlank()) add("Thread series is required")
+            if (tpi == null) add("TPI not available for selected diameter/thread series")
+            if (asIn2 == null) add("Tensile stress area unavailable for selected diameter/thread series")
+            if (gradeKey == null) add("Bolt grade is required for calculation")
+            if (strengthKsi == null) add("Strength not available for selected grade/diameter")
+            if (usingAllowable && workingTemp == null) add("Working temperature is required")
+            if (!requiresSpecifiedTorque && methodIsUserInput && targetBoltLoadF.toDoubleOrNull() == null) {
+                add("Target bolt load F is required")
+            }
+            if (!requiresSpecifiedTorque && !methodIsUserInput && pctYield == null) {
+                add("Percent yield is required")
+            }
         }
         if (requiresSpecifiedTorque && specifiedTargetTorque.toDoubleOrNull() == null) {
             add("Specified target torque is required for this gasket type")
@@ -394,6 +399,26 @@ fun FlangeFormScreen(
                 )
                 Spacer(modifier = Modifier.height(10.dp))
             }
+            if (!requiresSpecifiedTorque) {
+                val defaultPctLabel = selectedGasket.defaults.boltStressPctYieldDefault
+                    ?.let { String.format("%.2f", it) }
+                val yieldLabel = if (defaultPctLabel != null) {
+                    "Target bolt stress % of yield (default $defaultPctLabel)"
+                } else {
+                    "Target bolt stress % of yield"
+                }
+                LabeledField(label = yieldLabel) {
+                    OutlinedTextField(
+                        value = pctYieldTarget,
+                        onValueChange = {
+                            pctYieldTarget = it
+                            pctYieldEdited = true
+                        },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
         }
 
         Row(
@@ -483,8 +508,26 @@ fun FlangeFormScreen(
                     onValueChange = { lubricantType = it }
                 )
             }
+            val lubeNote = lube?.let {
+                "Selected lube: K=${it.nutFactorK ?: "?"}, " +
+                    "${formatPercent(it.percentOfDry ?: 1.0)} of dry torque"
+            }
+            if (!lubeNote.isNullOrBlank()) {
+                Text(
+                    text = lubeNote,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = FlangeColors.TextSecondary
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+            }
         } else {
             Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Dry torque: K=0.27 (100% of dry torque)",
+                style = MaterialTheme.typography.bodySmall,
+                color = FlangeColors.TextSecondary
+            )
+            Spacer(modifier = Modifier.height(6.dp))
         }
 
         LabeledField(label = "Flange Class") {
@@ -766,25 +809,6 @@ fun FlangeFormScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
-            } else {
-                val defaultPctLabel = selectedGasket?.defaults?.boltStressPctYieldDefault
-                    ?.let { String.format("%.2f", it) }
-                val yieldLabel = if (defaultPctLabel != null) {
-                    "Percent of Yield (default $defaultPctLabel)"
-                } else {
-                    "Percent of Yield (default 0.50)"
-                }
-                LabeledField(label = yieldLabel) {
-                    OutlinedTextField(
-                        value = pctYieldTarget,
-                        onValueChange = {
-                            pctYieldTarget = it
-                            pctYieldEdited = true
-                        },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
             }
         }
 
@@ -853,13 +877,12 @@ fun FlangeFormScreen(
             )
         }
 
-        val specifiedTorqueValue = specifiedTargetTorque.toDoubleOrNull()
-        val calculatedTorqueValue = calculatedTargetTorque.toDoubleOrNull()
-        val effectiveTorque = when {
-            specifiedTorqueValue != null -> specifiedTorqueValue
-            calculatedTorqueValue != null -> calculatedTorqueValue
-            else -> 0.0
-        }
+    val calculatedTorqueValue = calculatedTargetTorque.toDoubleOrNull()
+    val effectiveTorque = when {
+        usingSpecifiedTorque -> specifiedTorqueValue ?: 0.0
+        calculatedTorqueValue != null -> calculatedTorqueValue
+        else -> 0.0
+    }
 
         if (effectiveTorque > 0) {
             val effectiveLabel = String.format("Final Target Torque: %.0f ft-lb", effectiveTorque)
