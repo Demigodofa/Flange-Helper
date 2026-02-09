@@ -32,13 +32,35 @@ object JobStorage {
                                     description = formObj.optString("description"),
                                     serviceType = formObj.optString("serviceType"),
                                     gasketType = formObj.optString("gasketType"),
+                                    wrenchSerials = formObj.optString("wrenchSerials"),
+                                    wrenchCalDateMillis = formObj.optLong("wrenchCalDateMillis"),
+                                    torqueDry = formObj.optBoolean("torqueDry"),
+                                    torqueWet = formObj.optBoolean("torqueWet"),
+                                    lubricantType = formObj.optString("lubricantType"),
                                     flangeClass = formObj.optString("flangeClass"),
                                     pipeSize = formObj.optString("pipeSize"),
                                     customInnerDiameter = formObj.optString("customInnerDiameter"),
                                     customOuterDiameter = formObj.optString("customOuterDiameter"),
                                     customThickness = formObj.optString("customThickness"),
                                     flangeFace = formObj.optString("flangeFace"),
-                                    boltHoles = formObj.optString("boltHoles")
+                                    boltHoles = formObj.optString("boltHoles"),
+                                    flangeFaceCondition = formObj.optString("flangeFaceCondition"),
+                                    flangeParallel = formObj.optString("flangeParallel"),
+                                    fastenerType = formObj.optString("fastenerType"),
+                                    fastenerSpec = formObj.optString("fastenerSpec"),
+                                    fastenerLength = formObj.optString("fastenerLength"),
+                                    fastenerDiameter = formObj.optString("fastenerDiameter"),
+                                    nutSpec = formObj.optString("nutSpec"),
+                                    calculatedTargetTorque = formObj.optString("calculatedTargetTorque"),
+                                    specifiedTargetTorque = formObj.optString("specifiedTargetTorque"),
+                                    pass1Confirmed = formObj.optBoolean("pass1Confirmed"),
+                                    pass1Initials = formObj.optString("pass1Initials"),
+                                    pass2Confirmed = formObj.optBoolean("pass2Confirmed"),
+                                    pass2Initials = formObj.optString("pass2Initials"),
+                                    pass3Confirmed = formObj.optBoolean("pass3Confirmed"),
+                                    pass3Initials = formObj.optString("pass3Initials"),
+                                    pass4Confirmed = formObj.optBoolean("pass4Confirmed"),
+                                    pass4Initials = formObj.optString("pass4Initials")
                                 )
                             )
                         }
@@ -80,6 +102,11 @@ object JobStorage {
                 formObj.put("description", form.description)
                 formObj.put("serviceType", form.serviceType)
                 formObj.put("gasketType", form.gasketType)
+                formObj.put("wrenchSerials", form.wrenchSerials)
+                formObj.put("wrenchCalDateMillis", form.wrenchCalDateMillis)
+                formObj.put("torqueDry", form.torqueDry)
+                formObj.put("torqueWet", form.torqueWet)
+                formObj.put("lubricantType", form.lubricantType)
                 formObj.put("flangeClass", form.flangeClass)
                 formObj.put("pipeSize", form.pipeSize)
                 formObj.put("customInnerDiameter", form.customInnerDiameter)
@@ -87,6 +114,23 @@ object JobStorage {
                 formObj.put("customThickness", form.customThickness)
                 formObj.put("flangeFace", form.flangeFace)
                 formObj.put("boltHoles", form.boltHoles)
+                formObj.put("flangeFaceCondition", form.flangeFaceCondition)
+                formObj.put("flangeParallel", form.flangeParallel)
+                formObj.put("fastenerType", form.fastenerType)
+                formObj.put("fastenerSpec", form.fastenerSpec)
+                formObj.put("fastenerLength", form.fastenerLength)
+                formObj.put("fastenerDiameter", form.fastenerDiameter)
+                formObj.put("nutSpec", form.nutSpec)
+                formObj.put("calculatedTargetTorque", form.calculatedTargetTorque)
+                formObj.put("specifiedTargetTorque", form.specifiedTargetTorque)
+                formObj.put("pass1Confirmed", form.pass1Confirmed)
+                formObj.put("pass1Initials", form.pass1Initials)
+                formObj.put("pass2Confirmed", form.pass2Confirmed)
+                formObj.put("pass2Initials", form.pass2Initials)
+                formObj.put("pass3Confirmed", form.pass3Confirmed)
+                formObj.put("pass3Initials", form.pass3Initials)
+                formObj.put("pass4Confirmed", form.pass4Confirmed)
+                formObj.put("pass4Initials", form.pass4Initials)
                 formsArray.put(formObj)
             }
             obj.put("forms", formsArray)
