@@ -17,7 +17,8 @@ import com.kevin.flangejointassembly.ui.components.FlangeHeader
 
 @Composable
 fun JobDetailScreen(
-    jobNumber: String,
+    job: JobItem,
+    onNewFlangeForm: () -> Unit,
     onBack: () -> Unit
 ) {
     BackHandler(onBack = onBack)
@@ -36,16 +37,36 @@ fun JobDetailScreen(
             FlangeHeader(onBack = onBack)
             Spacer(modifier = Modifier.height(24.dp))
             Text(
-                text = "Job $jobNumber",
+                text = "Job ${job.number}",
                 style = MaterialTheme.typography.titleLarge,
                 color = FlangeColors.TextPrimary
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Flange tightening details will be built here next.",
+                text = job.location.ifBlank { "Job location" },
                 style = MaterialTheme.typography.bodyMedium,
                 color = FlangeColors.TextSecondary
             )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = formatDate(job.dateMillis),
+                style = MaterialTheme.typography.bodySmall,
+                color = FlangeColors.TextMuted
+            )
+            Spacer(modifier = Modifier.height(20.dp))
+            androidx.compose.material3.Button(
+                onClick = onNewFlangeForm,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(54.dp),
+                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                    containerColor = FlangeColors.ExportButton,
+                    contentColor = FlangeColors.ExportButtonText
+                ),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp)
+            ) {
+                Text("New Flange Bolting Form")
+            }
         }
     }
 }

@@ -13,6 +13,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import com.kevin.flangejointassembly.ui.theme.FlangeJointAssemblyHelperTheme
 import com.kevin.flangejointassembly.ui.JobDetailScreen
+import com.kevin.flangejointassembly.ui.FlangeFormScreen
 import com.kevin.flangejointassembly.ui.JobFormScreen
 import com.kevin.flangejointassembly.ui.JobItem
 import com.kevin.flangejointassembly.ui.JobStorage
@@ -40,6 +41,7 @@ fun FlangeApp() {
     var jobs by remember { mutableStateOf(listOf<JobItem>()) }
     var selectedJobId by remember { mutableStateOf<String?>(null) }
     var editingJobId by remember { mutableStateOf<String?>(null) }
+    var flangeJobId by remember { mutableStateOf<String?>(null) }
     var storageUsedBytes by remember { mutableStateOf(0L) }
 
     LaunchedEffect(Unit) {
@@ -126,10 +128,43 @@ fun FlangeApp() {
             }
             FlangeScreen.JobDetail -> {
                 val selectedJob = jobs.find { it.id == selectedJobId }
-                JobDetailScreen(
-                    jobNumber = selectedJob?.number ?: "",
-                    onBack = { currentScreen = FlangeScreen.Start }
-                )
+                if (selectedJob != null) {
+                    JobDetailScreen(
+                        job = selectedJob,
+                        onNewFlangeForm = {
+                            flangeJobId = selectedJob.id
+                            currentScreen = FlangeScreen.FlangeForm
+                        },
+                        onBack = { currentScreen = FlangeScreen.Start }
+                    )
+                } else {
+                    currentScreen = FlangeScreen.Start
+                }
+            }
+            FlangeScreen.FlangeForm -> {
+                val job = jobs.find { it.id == flangeJobId }
+                if (job != null) {
+                    FlangeFormScreen(
+                        jobId = job.id,
+                        jobNumber = job.number,
+                        jobDateMillis = job.dateMillis,
+                        onSave = { form ->
+                            val updated = jobs.map { item ->
+                                if (item.id == job.id) {
+                                    item.copy(flangeForms = item.flangeForms + form.copy(jobId = job.id))
+                                } else {
+                                    item
+                                }
+                            }
+                            persistJobs(updated)
+                            currentScreen = FlangeScreen.JobDetail
+                            selectedJobId = job.id
+                        },
+                        onBack = { currentScreen = FlangeScreen.JobDetail }
+                    )
+                } else {
+                    currentScreen = FlangeScreen.Start
+                }
             }
         }
     }
@@ -138,5 +173,6 @@ fun FlangeApp() {
 enum class FlangeScreen {
     Start,
     JobForm,
-    JobDetail
+    JobDetail,
+    FlangeForm
 }
