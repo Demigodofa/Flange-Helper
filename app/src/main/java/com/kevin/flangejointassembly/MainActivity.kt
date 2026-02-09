@@ -4,14 +4,15 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.kevin.flangejointassembly.ui.theme.FlangeJointAssemblyHelperTheme
+import com.kevin.flangejointassembly.ui.FormScreen
+import com.kevin.flangejointassembly.ui.SplashScreen
+import com.kevin.flangejointassembly.ui.StartScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -19,29 +20,32 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             FlangeJointAssemblyHelperTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+                FlangeApp()
             }
         }
     }
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
+fun FlangeApp() {
+    var showSplash by remember { mutableStateOf(true) }
+    var currentScreen by remember { mutableStateOf(FlangeScreen.Start) }
+
+    if (showSplash) {
+        SplashScreen(onTimeout = { showSplash = false })
+    } else {
+        when (currentScreen) {
+            FlangeScreen.Start -> StartScreen(
+                onStart = { currentScreen = FlangeScreen.Form }
+            )
+            FlangeScreen.Form -> FormScreen(
+                onBack = { currentScreen = FlangeScreen.Start }
+            )
+        }
+    }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    FlangeJointAssemblyHelperTheme {
-        Greeting("Android")
-    }
+enum class FlangeScreen {
+    Start,
+    Form
 }

@@ -1,0 +1,102 @@
+package com.kevin.flangejointassembly.ui
+
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.kevin.flangejointassembly.R
+import kotlinx.coroutines.delay
+
+@Composable
+fun SplashScreen(onTimeout: () -> Unit) {
+    val alpha = remember { Animatable(0f) }
+    var phase by remember { mutableIntStateOf(0) }
+    val context = LocalContext.current
+    val logoResId = remember(context) {
+        val weldersId = context.resources.getIdentifier(
+            "welders_helper_main_program",
+            "drawable",
+            context.packageName
+        )
+        if (weldersId != 0) weldersId else R.drawable.flange_helper_512
+    }
+
+    LaunchedEffect(Unit) {
+        phase = 0
+        alpha.snapTo(0f)
+        alpha.animateTo(1f, animationSpec = tween(700))
+        delay(900)
+        alpha.animateTo(0f, animationSpec = tween(500))
+        delay(250)
+        phase = 1
+        alpha.snapTo(0f)
+        alpha.animateTo(1f, animationSpec = tween(900))
+        delay(1400)
+        alpha.animateTo(0f, animationSpec = tween(700))
+        delay(200)
+        onTimeout()
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(androidx.compose.ui.graphics.Color.White),
+        contentAlignment = Alignment.Center
+    ) {
+        if (phase == 0) {
+            Text(
+                text = "Brought to you by:",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontSize = 26.sp,
+                    lineHeight = 30.sp
+                ),
+                fontWeight = FontWeight.SemiBold,
+                color = FlangeColors.Title,
+                modifier = Modifier.alpha(alpha.value)
+            )
+        } else {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Image(
+                    painter = painterResource(id = logoResId),
+                    contentDescription = "Welders Helper Logo",
+                    modifier = Modifier
+                        .size(220.dp)
+                        .alpha(alpha.value)
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+                Text(
+                    text = "Welders Helper",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = 30.sp,
+                        lineHeight = 34.sp
+                    ),
+                    fontWeight = FontWeight.Bold,
+                    color = FlangeColors.Title,
+                    modifier = Modifier.alpha(alpha.value)
+                )
+            }
+        }
+    }
+}
