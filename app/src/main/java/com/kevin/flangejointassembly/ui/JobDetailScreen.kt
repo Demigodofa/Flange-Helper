@@ -16,7 +16,10 @@ import androidx.compose.ui.unit.dp
 import com.kevin.flangejointassembly.ui.components.FlangeHeader
 
 @Composable
-fun FormScreen(onBack: () -> Unit) {
+fun JobDetailScreen(
+    jobNumber: String,
+    onBack: () -> Unit
+) {
     BackHandler(onBack = onBack)
 
     Scaffold(
@@ -33,13 +36,13 @@ fun FormScreen(onBack: () -> Unit) {
             FlangeHeader(onBack = onBack)
             Spacer(modifier = Modifier.height(24.dp))
             Text(
-                text = "Flange Report",
+                text = "Job $jobNumber",
                 style = MaterialTheme.typography.titleLarge,
                 color = FlangeColors.TextPrimary
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "First input screen placeholder. Next you’ll define the fields.",
+                text = "Flange tightening details will be built here next.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = FlangeColors.TextSecondary
             )
