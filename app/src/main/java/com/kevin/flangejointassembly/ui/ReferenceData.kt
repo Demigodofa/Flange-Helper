@@ -23,6 +23,28 @@ object ReferenceData {
         val su: Double?
     )
 
+    data class GasketDefaults(
+        val boltStressPctYieldDefault: Double?,
+        val boltStressPctYieldAllowed: List<Double>,
+        val specifiedTargetTorqueRequired: Boolean
+    )
+
+    data class GasketRetorque(
+        val recommended: Boolean?,
+        val timing: String?
+    )
+
+    data class GasketType(
+        val id: String,
+        val label: String,
+        val category: String,
+        val allowCalculatedTorque: Boolean,
+        val targetMethod: String,
+        val defaults: GasketDefaults,
+        val warnings: List<String>,
+        val retorque: GasketRetorque
+    )
+
     data class Data(
         val tpiLookup: Map<String, Map<String, Double?>>,
         val asLookup: Map<String, Map<String, Double?>>,
@@ -30,7 +52,8 @@ object ReferenceData {
         val allowableStressLookup: Map<String, List<AllowableStressRange>>,
         val boltSequenceLookup: Map<Int, List<Int>>,
         val boltNumberingDirection: String,
-        val boltNumberingRule: String
+        val boltNumberingRule: String,
+        val gasketTypes: List<GasketType>
     )
 
     fun load(context: Context): Data {
@@ -126,6 +149,56 @@ object ReferenceData {
                 }
             }
 
+            val gasketTypes = mutableListOf<GasketType>()
+            val gasketLogic = root.optJSONObject("gasket_logic")
+            if (gasketLogic != null) {
+                val typesArray = gasketLogic.optJSONArray("gasket_types")
+                if (typesArray != null) {
+                    for (i in 0 until typesArray.length()) {
+                        val obj = typesArray.optJSONObject(i) ?: continue
+                        val defaultsObj = obj.optJSONObject("defaults")
+                        val allowedList = mutableListOf<Double>()
+                        val allowedArray = defaultsObj?.optJSONArray("boltStressPctYield_allowed")
+                        if (allowedArray != null) {
+                            for (j in 0 until allowedArray.length()) {
+                                allowedArray.optDouble(j).let { allowedList.add(it) }
+                            }
+                        }
+                        val warnings = mutableListOf<String>()
+                        val warningsArray = obj.optJSONArray("warnings")
+                        if (warningsArray != null) {
+                            for (j in 0 until warningsArray.length()) {
+                                val warning = warningsArray.optString(j)
+                                if (warning.isNotBlank()) warnings.add(warning)
+                            }
+                        }
+                        val retorqueObj = obj.optJSONObject("retorque")
+                        val retorque = GasketRetorque(
+                            recommended = retorqueObj?.opt("recommended") as? Boolean,
+                            timing = retorqueObj?.optString("timing")
+                        )
+                        gasketTypes.add(
+                            GasketType(
+                                id = obj.optString("id"),
+                                label = obj.optString("label"),
+                                category = obj.optString("category"),
+                                allowCalculatedTorque = obj.optBoolean("allowCalculatedTorque", true),
+                                targetMethod = obj.optString("target_method"),
+                                defaults = GasketDefaults(
+                                    boltStressPctYieldDefault = defaultsObj?.opt("boltStressPctYield_default") as? Number
+                                        ?.toDouble(),
+                                    boltStressPctYieldAllowed = allowedList,
+                                    specifiedTargetTorqueRequired = defaultsObj?.optBoolean("specifiedTargetTorque_required")
+                                        ?: false
+                                ),
+                                warnings = warnings,
+                                retorque = retorque
+                            )
+                        )
+                    }
+                }
+            }
+
             Data(
                 tpiLookup = tpiLookup,
                 asLookup = asLookup,
@@ -133,7 +206,8 @@ object ReferenceData {
                 allowableStressLookup = allowableStressLookup,
                 boltSequenceLookup = boltSequenceLookup,
                 boltNumberingDirection = boltNumberingDirection,
-                boltNumberingRule = boltNumberingRule
+                boltNumberingRule = boltNumberingRule,
+                gasketTypes = gasketTypes
             )
         } catch (_: Exception) {
             Data(
@@ -143,7 +217,8 @@ object ReferenceData {
                 allowableStressLookup = emptyMap(),
                 boltSequenceLookup = emptyMap(),
                 boltNumberingDirection = "",
-                boltNumberingRule = ""
+                boltNumberingRule = "",
+                gasketTypes = emptyList()
             )
         }
     }

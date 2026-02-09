@@ -735,6 +735,309 @@
         }
       ]
     },
+    "gasket_logic": {
+      "version": "1.0",
+      "units": {
+        "stress": "psi",
+        "pct": "fraction"
+      },
+      "notes": [
+        "Gasket does not appear directly in T=K*D*F. Gasket type selects the recommended method + target clamp/bolt stress window + retorque guidance.",
+        "App flow: gasket_type -> (target_method, defaults) -> compute target_bolt_load_per_bolt_F -> compute torque T using nut factor K.",
+        "If allowCalculatedTorque=false, require SpecifiedTargetTorque entry (from project spec / OEM table)."
+      ],
+      "gasket_types": [
+        {
+          "id": "SOFT_SHEET_LE_1_16",
+          "label": "Soft cut sheet (<= 1/16 in)",
+          "category": "soft_sheet",
+          "allowCalculatedTorque": true,
+          "target_method": "BOLT_STRESS_PCT_YIELD",
+          "defaults": {
+            "boltStressPctYield_default": 0.35,
+            "boltStressPctYield_allowed": [
+              0.25,
+              0.45
+            ]
+          },
+          "warnings": [
+            "Over-compression risk. Keep bolt stress lower vs spiral/kammprofile.",
+            "If leakage after heat/pressure cycle, re-check after relaxation if spec allows."
+          ],
+          "retorque": {
+            "recommended": true,
+            "timing": "after initial warm-up / first pressure cycle if procedure allows"
+          }
+        },
+        {
+          "id": "SOFT_SHEET_GT_1_16",
+          "label": "Soft cut sheet (> 1/16 in)",
+          "category": "soft_sheet",
+          "allowCalculatedTorque": true,
+          "target_method": "BOLT_STRESS_PCT_YIELD",
+          "defaults": {
+            "boltStressPctYield_default": 0.40,
+            "boltStressPctYield_allowed": [
+              0.30,
+              0.50
+            ]
+          },
+          "warnings": [
+            "Thicker soft sheet can relax more; may need re-check pass.",
+            "Avoid crushing/over-torque; verify flange parallelism and surface finish."
+          ],
+          "retorque": {
+            "recommended": true,
+            "timing": "after initial warm-up / first pressure cycle if procedure allows"
+          }
+        },
+        {
+          "id": "PTFE_SHEET",
+          "label": "PTFE sheet (virgin/filled)",
+          "category": "ptfe",
+          "allowCalculatedTorque": true,
+          "target_method": "BOLT_STRESS_PCT_YIELD",
+          "defaults": {
+            "boltStressPctYield_default": 0.40,
+            "boltStressPctYield_allowed": [
+              0.30,
+              0.55
+            ]
+          },
+          "warnings": [
+            "PTFE creeps/relaxes (cold flow). Expect bolt load loss over time.",
+            "Consider re-torque / live-loading if required by spec."
+          ],
+          "retorque": {
+            "recommended": true,
+            "timing": "after creep interval (e.g., 4-24 hr) and/or after first thermal cycle if allowed"
+          }
+        },
+        {
+          "id": "EPTFE",
+          "label": "Expanded PTFE (ePTFE)",
+          "category": "ptfe",
+          "allowCalculatedTorque": true,
+          "target_method": "BOLT_STRESS_PCT_YIELD",
+          "defaults": {
+            "boltStressPctYield_default": 0.38,
+            "boltStressPctYield_allowed": [
+              0.30,
+              0.50
+            ]
+          },
+          "warnings": [
+            "Better conformability than dense PTFE, still relaxes.",
+            "Do not exceed gasket manufacturer compression limits if provided."
+          ],
+          "retorque": {
+            "recommended": true,
+            "timing": "after first thermal/pressure cycle if procedure allows"
+          }
+        },
+        {
+          "id": "SPIRAL_WOUND_RINGED",
+          "label": "Spiral wound (with inner/outer ring)",
+          "category": "spiral_wound",
+          "allowCalculatedTorque": true,
+          "target_method": "BOLT_STRESS_PCT_YIELD",
+          "defaults": {
+            "boltStressPctYield_default": 0.50,
+            "boltStressPctYield_allowed": [
+              0.40,
+              0.65
+            ]
+          },
+          "warnings": [
+            "Needs enough seating stress to seal; too low = leak.",
+            "Verify correct ring type (inner/outer) and centering."
+          ],
+          "retorque": {
+            "recommended": false,
+            "timing": "only if spec/procedure requires"
+          }
+        },
+        {
+          "id": "SPIRAL_WOUND_NO_RING",
+          "label": "Spiral wound (no ring)",
+          "category": "spiral_wound",
+          "allowCalculatedTorque": true,
+          "target_method": "BOLT_STRESS_PCT_YIELD",
+          "defaults": {
+            "boltStressPctYield_default": 0.48,
+            "boltStressPctYield_allowed": [
+              0.38,
+              0.60
+            ]
+          },
+          "warnings": [
+            "Higher blowout/handling sensitivity vs ringed style.",
+            "Ensure proper compression control; consider ringed style if possible."
+          ],
+          "retorque": {
+            "recommended": false,
+            "timing": "only if spec/procedure requires"
+          }
+        },
+        {
+          "id": "KAMMPROFILE",
+          "label": "Kammprofile (grooved metal + facing)",
+          "category": "kammprofile",
+          "allowCalculatedTorque": true,
+          "target_method": "BOLT_STRESS_PCT_YIELD",
+          "defaults": {
+            "boltStressPctYield_default": 0.55,
+            "boltStressPctYield_allowed": [
+              0.45,
+              0.70
+            ]
+          },
+          "warnings": [
+            "Typically tolerant with wide operating window; still follow facing limits if provided.",
+            "Check for correct facing material and damage."
+          ],
+          "retorque": {
+            "recommended": false,
+            "timing": "only if spec/procedure requires"
+          }
+        },
+        {
+          "id": "METAL_JACKETED",
+          "label": "Metal jacketed gasket",
+          "category": "metal_jacketed",
+          "allowCalculatedTorque": true,
+          "target_method": "BOLT_STRESS_PCT_YIELD",
+          "defaults": {
+            "boltStressPctYield_default": 0.55,
+            "boltStressPctYield_allowed": [
+              0.45,
+              0.70
+            ]
+          },
+          "warnings": [
+            "Can be sensitive to flange finish/flatness.",
+            "Avoid uneven seating; use strict pattern + parallelism checks."
+          ],
+          "retorque": {
+            "recommended": false,
+            "timing": "only if spec/procedure requires"
+          }
+        },
+        {
+          "id": "CORRUGATED_METAL_FACED",
+          "label": "Corrugated metal w/ facing",
+          "category": "corrugated",
+          "allowCalculatedTorque": true,
+          "target_method": "BOLT_STRESS_PCT_YIELD",
+          "defaults": {
+            "boltStressPctYield_default": 0.52,
+            "boltStressPctYield_allowed": [
+              0.42,
+              0.68
+            ]
+          },
+          "warnings": [
+            "Requires good surface condition; inspect for radial scratches/nicks.",
+            "Follow facing compression guidance if available."
+          ],
+          "retorque": {
+            "recommended": false,
+            "timing": "only if spec/procedure requires"
+          }
+        },
+        {
+          "id": "RING_TYPE_JOINT_RTJ",
+          "label": "Ring Type Joint (RTJ)",
+          "category": "rtj",
+          "allowCalculatedTorque": false,
+          "target_method": "SPECIFIED_TARGET_TORQUE_REQUIRED",
+          "defaults": {
+            "specifiedTargetTorque_required": true
+          },
+          "warnings": [
+            "Do not 'calculate' torque without an approved procedure/table; sealing depends on ring/groove geometry and controlled seating.",
+            "Verify correct ring number/material, groove condition, and alignment."
+          ],
+          "retorque": {
+            "recommended": false,
+            "timing": "not typical; follow procedure"
+          }
+        },
+        {
+          "id": "RUBBER_FULL_FACE",
+          "label": "Rubber full-face (water/low pressure typical)",
+          "category": "elastomer",
+          "allowCalculatedTorque": true,
+          "target_method": "BOLT_STRESS_PCT_YIELD",
+          "defaults": {
+            "boltStressPctYield_default": 0.30,
+            "boltStressPctYield_allowed": [
+              0.20,
+              0.40
+            ]
+          },
+          "warnings": [
+            "Easy to over-compress; watch for extrusion.",
+            "Use low target stress and even compression."
+          ],
+          "retorque": {
+            "recommended": true,
+            "timing": "after initial set if procedure allows"
+          }
+        },
+        {
+          "id": "GRAPHITE_SHEET",
+          "label": "Flexible graphite sheet",
+          "category": "graphite_sheet",
+          "allowCalculatedTorque": true,
+          "target_method": "BOLT_STRESS_PCT_YIELD",
+          "defaults": {
+            "boltStressPctYield_default": 0.45,
+            "boltStressPctYield_allowed": [
+              0.35,
+              0.60
+            ]
+          },
+          "warnings": [
+            "Graphite can relax; may benefit from re-check pass depending on service.",
+            "Handle carefully; damage/tearing can cause leak paths."
+          ],
+          "retorque": {
+            "recommended": true,
+            "timing": "after first thermal cycle if allowed"
+          }
+        }
+      ],
+      "method_definitions": {
+        "BOLT_STRESS_PCT_YIELD": {
+          "description": "Target bolt stress as % of bolt material yield; compute F from As*Sy*pct then torque.",
+          "required_inputs": [
+            "bolt_diameter_in",
+            "thread_series",
+            "tpi",
+            "bolt_yield_strength_Sy_psi_or_ksi",
+            "pctYield",
+            "nutFactorK"
+          ]
+        },
+        "GASKET_STRESS": {
+          "description": "Target gasket compressive stress Sg; compute total clamp W=Sg*Ag then per-bolt F=W/nBolts then torque.",
+          "required_inputs": [
+            "effective_gasket_area_Ag_in2",
+            "target_gasket_stress_Sg_psi",
+            "nBolts",
+            "nutFactorK",
+            "bolt_diameter_in"
+          ]
+        },
+        "SPECIFIED_TARGET_TORQUE_REQUIRED": {
+          "description": "User must enter SpecifiedTargetTorque; app only calculates pass torques and sequence/checks.",
+          "required_inputs": [
+            "specifiedTargetTorqueFtLb"
+          ]
+        }
+      }
+    },
     "torque_calculation": {
       "target_torque_used_rule": "if specifiedTargetTorqueFtLb not null -> use it else use calculatedTargetTorqueFtLb",
       "boltLoad_F_method": {

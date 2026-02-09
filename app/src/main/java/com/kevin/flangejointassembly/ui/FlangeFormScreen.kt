@@ -106,6 +106,7 @@ fun FlangeFormScreen(
     var torqueMethod by remember { mutableStateOf("YIELD_PERCENT") }
     var targetBoltLoadF by remember { mutableStateOf("") }
     var pctYieldTarget by remember { mutableStateOf("0.50") }
+    var pctYieldEdited by remember { mutableStateOf(false) }
     var workingTempF by remember { mutableStateOf("") }
     var usedTempF by remember { mutableStateOf("") }
     var calculatedTargetTorque by remember { mutableStateOf("") }
@@ -184,6 +185,10 @@ fun FlangeFormScreen(
     val asIn2 = asLookup ?: calculateTensileStressArea(diameterIn, tpi)
     val gradeKey = gradeKeyForSpec(fastenerSpec, fastenerClass)
     val syKsi = gradeKey?.let { lookupSy(referenceData, it, diameterIn) }
+    val selectedGasket = referenceData?.gasketTypes?.firstOrNull { it.label == gasketType }
+    val requiresSpecifiedTorque = selectedGasket?.allowCalculatedTorque == false ||
+        selectedGasket?.targetMethod == "SPECIFIED_TARGET_TORQUE_REQUIRED" ||
+        selectedGasket?.defaults?.specifiedTargetTorqueRequired == true
     val tempOptions = remember(referenceData) { buildTemperatureOptions(referenceData) }
     val workingTemp = workingTempF.toIntOrNull()
     val allowable = lookupAllowableStress(referenceData, gradeKey, diameterIn, workingTemp)
@@ -199,6 +204,16 @@ fun FlangeFormScreen(
     LaunchedEffect(tempOptions) {
         if (workingTempF.isBlank() && tempOptions.isNotEmpty()) {
             workingTempF = tempOptions.first().value
+        }
+    }
+
+    LaunchedEffect(gasketType, selectedGasket) {
+        val defaultPct = selectedGasket?.defaults?.boltStressPctYieldDefault
+        if (defaultPct != null && !pctYieldEdited) {
+            pctYieldTarget = String.format("%.2f", defaultPct)
+        }
+        if (requiresSpecifiedTorque) {
+            torqueMethod = "USER_INPUT"
         }
     }
 
@@ -231,8 +246,15 @@ fun FlangeFormScreen(
         if (gradeKey == null) add("Bolt grade is required for calculation")
         if (strengthKsi == null) add("Strength not available for selected grade/diameter")
         if (usingAllowable && workingTemp == null) add("Working temperature is required")
-        if (methodIsUserInput && targetBoltLoadF.toDoubleOrNull() == null) add("Target bolt load F is required")
-        if (!methodIsUserInput && pctYield == null) add("Percent yield is required")
+        if (!requiresSpecifiedTorque && methodIsUserInput && targetBoltLoadF.toDoubleOrNull() == null) {
+            add("Target bolt load F is required")
+        }
+        if (!requiresSpecifiedTorque && !methodIsUserInput && pctYield == null) {
+            add("Percent yield is required")
+        }
+        if (requiresSpecifiedTorque && specifiedTargetTorque.toDoubleOrNull() == null) {
+            add("Specified target torque is required for this gasket type")
+        }
         if (torqueWet && lube?.nutFactorK == null) add("Lubricant selection is required for wet torque")
     }
 
@@ -327,10 +349,51 @@ fun FlangeFormScreen(
         LabeledField(label = "Gasket Type") {
             DropdownField(
                 value = gasketType,
-                options = gasketTypeOptions(),
+                options = gasketTypeOptions(referenceData),
                 placeholder = "Select gasket type",
                 onValueChange = { gasketType = it }
             )
+        }
+        if (selectedGasket != null) {
+            val defaultPct = selectedGasket.defaults.boltStressPctYieldDefault
+            val allowed = selectedGasket.defaults.boltStressPctYieldAllowed
+            val pctSummary = if (defaultPct != null) {
+                val allowedText = if (allowed.size >= 2) {
+                    "Allowed ${formatPercent(allowed.minOrNull() ?: defaultPct)}-" +
+                        "${formatPercent(allowed.maxOrNull() ?: defaultPct)}"
+                } else {
+                    ""
+                }
+                "Default bolt stress ${formatPercent(defaultPct)}. $allowedText".trim()
+            } else {
+                ""
+            }
+            val targetMethodText = when (selectedGasket.targetMethod) {
+                "BOLT_STRESS_PCT_YIELD" -> "Target method: Bolt stress % of yield"
+                "GASKET_STRESS" -> "Target method: Gasket stress (requires clamp load inputs)"
+                "SPECIFIED_TARGET_TORQUE_REQUIRED" -> "Target method: Specified target torque required"
+                else -> ""
+            }
+            val retorqueText = selectedGasket.retorque.recommended?.let { recommended ->
+                val timing = selectedGasket.retorque.timing ?: ""
+                if (recommended) "Retorque recommended: $timing" else "Retorque: not typical"
+            } ?: ""
+            val warningsText = if (selectedGasket.warnings.isNotEmpty()) {
+                "Warnings: ${selectedGasket.warnings.joinToString(" ")}"
+            } else {
+                ""
+            }
+            if (targetMethodText.isNotBlank() || pctSummary.isNotBlank() || retorqueText.isNotBlank() || warningsText.isNotBlank()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = listOf(targetMethodText, pctSummary, retorqueText, warningsText)
+                        .filter { it.isNotBlank() }
+                        .joinToString("\n"),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = FlangeColors.TextSecondary
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+            }
         }
 
         Row(
@@ -677,32 +740,51 @@ fun FlangeFormScreen(
             }
         }
 
-        LabeledField(label = "Torque Method") {
-            DropdownField(
-                value = torqueMethod,
-                options = torqueMethodOptions(),
-                placeholder = "Select method",
-                onValueChange = { torqueMethod = it }
+        if (requiresSpecifiedTorque) {
+            Text(
+                text = "Specified target torque is required for this gasket type.",
+                style = MaterialTheme.typography.bodySmall,
+                color = FlangeColors.TextSecondary
             )
-        }
-
-        if (torqueMethod == "USER_INPUT") {
-            LabeledField(label = "Target Bolt Load F (lbf)") {
-                OutlinedTextField(
-                    value = targetBoltLoadF,
-                    onValueChange = { targetBoltLoadF = it },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+            Spacer(modifier = Modifier.height(8.dp))
+        } else {
+            LabeledField(label = "Torque Method") {
+                DropdownField(
+                    value = torqueMethod,
+                    options = torqueMethodOptions(),
+                    placeholder = "Select method",
+                    onValueChange = { torqueMethod = it }
                 )
             }
-        } else {
-            LabeledField(label = "Percent of Yield (default 0.50)") {
-                OutlinedTextField(
-                    value = pctYieldTarget,
-                    onValueChange = { pctYieldTarget = it },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
+
+            if (torqueMethod == "USER_INPUT") {
+                LabeledField(label = "Target Bolt Load F (lbf)") {
+                    OutlinedTextField(
+                        value = targetBoltLoadF,
+                        onValueChange = { targetBoltLoadF = it },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            } else {
+                val defaultPctLabel = selectedGasket?.defaults?.boltStressPctYieldDefault
+                    ?.let { String.format("%.2f", it) }
+                val yieldLabel = if (defaultPctLabel != null) {
+                    "Percent of Yield (default $defaultPctLabel)"
+                } else {
+                    "Percent of Yield (default 0.50)"
+                }
+                LabeledField(label = yieldLabel) {
+                    OutlinedTextField(
+                        value = pctYieldTarget,
+                        onValueChange = {
+                            pctYieldTarget = it
+                            pctYieldEdited = true
+                        },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
         }
 
@@ -739,7 +821,9 @@ fun FlangeFormScreen(
                     color = FlangeColors.DeleteButton
                 )
             } else if (calculatedTorque != null) {
-                val methodLabel = if (torqueMethod == "USER_INPUT") {
+                val methodLabel = if (requiresSpecifiedTorque) {
+                    "Specified torque required"
+                } else if (torqueMethod == "USER_INPUT") {
                     "F input"
                 } else {
                     "Yield % ${formatPercent(pctYield)}"
@@ -771,21 +855,14 @@ fun FlangeFormScreen(
 
         val specifiedTorqueValue = specifiedTargetTorque.toDoubleOrNull()
         val calculatedTorqueValue = calculatedTargetTorque.toDoubleOrNull()
-        val lubePercent = if (torqueWet) (lube?.percentOfDry ?: 1.0) else 1.0
         val effectiveTorque = when {
-            specifiedTorqueValue != null -> {
-                if (torqueWet) specifiedTorqueValue * lubePercent else specifiedTorqueValue
-            }
+            specifiedTorqueValue != null -> specifiedTorqueValue
             calculatedTorqueValue != null -> calculatedTorqueValue
             else -> 0.0
         }
 
         if (effectiveTorque > 0) {
-            val effectiveLabel = if (torqueWet) {
-                String.format("Effective Target Torque (wet): %.0f ft-lb", effectiveTorque)
-            } else {
-                String.format("Effective Target Torque: %.0f ft-lb", effectiveTorque)
-            }
+            val effectiveLabel = String.format("Final Target Torque: %.0f ft-lb", effectiveTorque)
             Text(
                 text = effectiveLabel,
                 style = MaterialTheme.typography.bodyMedium,
@@ -1087,16 +1164,26 @@ private fun reverseBits(value: Int, bitCount: Int): Int {
     return result
 }
 
-private fun gasketTypeOptions(): List<DropdownOption> = listOf(
-    DropdownOption("Spiral-wound"),
-    DropdownOption("Soft-faced metal core with facing layers such as flexible graphite, PTFE, or other conformable materials"),
-    DropdownOption("Flexible graphite reinforced with a metal interlayer insert"),
-    DropdownOption("Grooved metal"),
-    DropdownOption("Flat solid metal"),
-    DropdownOption("Flat metal jacketed"),
-    DropdownOption("Soft cut sheet, thickness <=1/16\""),
-    DropdownOption("Soft cut sheet, thickness >1/16\"")
-)
+private fun gasketTypeOptions(data: ReferenceData.Data?): List<DropdownOption> {
+    val fromData = data?.gasketTypes
+        ?.map { DropdownOption(it.label) }
+        ?.distinctBy { it.value }
+        ?.filter { it.value.isNotBlank() }
+        .orEmpty()
+    if (fromData.isNotEmpty()) {
+        return fromData
+    }
+    return listOf(
+        DropdownOption("Spiral-wound"),
+        DropdownOption("Soft-faced metal core with facing layers such as flexible graphite, PTFE, or other conformable materials"),
+        DropdownOption("Flexible graphite reinforced with a metal interlayer insert"),
+        DropdownOption("Grooved metal"),
+        DropdownOption("Flat solid metal"),
+        DropdownOption("Flat metal jacketed"),
+        DropdownOption("Soft cut sheet, thickness <=1/16\""),
+        DropdownOption("Soft cut sheet, thickness >1/16\"")
+    )
+}
 
 private fun flangeClassOptions(): List<DropdownOption> = listOf(
     DropdownOption("150#"),

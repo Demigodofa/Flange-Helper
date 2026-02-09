@@ -18,6 +18,7 @@ Flange Helper is a phone/tablet app that collects flange‑assembly data, perfor
 - Temperature‑based allowable stress support added for supported grades.
 - Bolt tightening sequences added to reference data (clockwise numbering; populated for all even counts 4–88).
 - Tightening sequence display wired into the flange form (numbering rule + sequence list).
+- Gasket logic added (defaults/allowed % yield, warnings, retorque guidance, and specified‑torque requirement for RTJ).
 
 ## Goal (What We’re Building)
 
@@ -104,8 +105,9 @@ Flange Helper is a phone/tablet app that collects flange‑assembly data, perfor
   - `F = As * S_ksi * 1000 * pctYield`
   - `T = (K * D * F) / 12`
 - If **Specified Target Torque** is entered, it overrides calculated torque.
-- If **Wet Torque** is selected and **Specified Target Torque** is used, the specified value is adjusted by the selected lube percent.
+- Final target torque is what pass percentages apply to (per PCC‑1 style sequence).
 - Allowable stress at temperature is used when data is available for a grade; otherwise room‑temp Sy is used.
+- Gasket selection can set a default percent‑of‑yield and/or require a specified target torque.
 
 ## Next Steps
 
