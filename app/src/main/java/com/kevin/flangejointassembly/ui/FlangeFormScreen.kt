@@ -1,4 +1,4 @@
-package com.kevin.flangejointassembly.ui
+﻿package com.kevin.flangejointassembly.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -32,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,21 +41,22 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.IntSize
 import com.kevin.flangejointassembly.ui.components.FlangeHeader
+import kotlin.math.roundToInt
 
 private data class DropdownOption(
     val value: String,
     val menuLabel: String = value,
     val displayLabel: String = value,
-    val percentOfDry: Double? = null
+    val percentOfDry: Double? = null,
+    val nutFactorK: Double? = null
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -67,6 +69,13 @@ fun FlangeFormScreen(
     onBack: () -> Unit
 ) {
     BackHandler(onBack = onBack)
+
+    val context = LocalContext.current
+    var referenceData by remember { mutableStateOf<ReferenceData.Data?>(null) }
+
+    LaunchedEffect(Unit) {
+        referenceData = ReferenceData.load(context)
+    }
 
     var dateMillis by remember { mutableLongStateOf(jobDateMillis) }
     var description by remember { mutableStateOf("") }
@@ -88,11 +97,19 @@ fun FlangeFormScreen(
     var flangeParallel by remember { mutableStateOf("") }
     var fastenerType by remember { mutableStateOf("") }
     var fastenerSpec by remember { mutableStateOf("") }
+    var fastenerClass by remember { mutableStateOf("") }
     var fastenerLength by remember { mutableStateOf("") }
     var fastenerDiameter by remember { mutableStateOf("") }
+    var threadSeries by remember { mutableStateOf("") }
     var nutSpec by remember { mutableStateOf("") }
+    var torqueMethod by remember { mutableStateOf("YIELD_PERCENT") }
+    var targetBoltLoadF by remember { mutableStateOf("") }
+    var pctYieldTarget by remember { mutableStateOf("0.50") }
+    var workingTempF by remember { mutableStateOf("") }
+    var usedTempF by remember { mutableStateOf("") }
     var calculatedTargetTorque by remember { mutableStateOf("") }
     var specifiedTargetTorque by remember { mutableStateOf("") }
+    var calculatedEdited by remember { mutableStateOf(false) }
     var pass1Confirmed by remember { mutableStateOf(false) }
     var pass1Initials by remember { mutableStateOf("") }
     var pass2Confirmed by remember { mutableStateOf(false) }
@@ -148,6 +165,80 @@ fun FlangeFormScreen(
             }
         ) {
             DatePicker(state = wrenchCalPickerState)
+        }
+    }
+
+    val diameterIn = parseDiameterInches(fastenerDiameter)
+    val diameterKey = normalizeDiameterKey(fastenerDiameter)
+    val defaultThreadSeries = defaultThreadSeriesFor(diameterIn)
+
+    LaunchedEffect(diameterKey) {
+        if (threadSeries.isBlank() && defaultThreadSeries.isNotBlank()) {
+            threadSeries = defaultThreadSeries
+        }
+    }
+
+    val tpi = referenceData?.tpiLookup?.get(threadSeries)?.get(diameterKey)
+    val asLookup = referenceData?.asLookup?.get(threadSeries)?.get(diameterKey)
+    val asIn2 = asLookup ?: calculateTensileStressArea(diameterIn, tpi)
+    val gradeKey = gradeKeyForSpec(fastenerSpec, fastenerClass)
+    val syKsi = gradeKey?.let { lookupSy(referenceData, it, diameterIn) }
+    val tempOptions = remember(referenceData) { buildTemperatureOptions(referenceData) }
+    val workingTemp = workingTempF.toIntOrNull()
+    val allowable = lookupAllowableStress(referenceData, gradeKey, diameterIn, workingTemp)
+    val strengthKsi = allowable?.s ?: syKsi
+    val roundedTemp = allowable?.usedTemp
+    val usingAllowable = allowable != null
+
+    LaunchedEffect(tempOptions) {
+        if (workingTempF.isBlank() && tempOptions.isNotEmpty()) {
+            workingTempF = tempOptions.first().value
+        }
+    }
+
+    LaunchedEffect(roundedTemp) {
+        usedTempF = roundedTemp?.toString().orEmpty()
+    }
+
+    val methodIsUserInput = torqueMethod == "USER_INPUT"
+    val pctYield = parsePercentValue(pctYieldTarget)
+    val boltLoadF = when {
+        methodIsUserInput -> targetBoltLoadF.toDoubleOrNull()
+        asIn2 != null && strengthKsi != null && pctYield != null -> asIn2 * (strengthKsi * 1000.0) * pctYield
+        else -> null
+    }
+
+    val lube = lubricantOptions().firstOrNull { it.value == lubricantType }
+    val kUsed = if (torqueWet) lube?.nutFactorK else 0.27
+    val calculatedTorque = if (boltLoadF != null && diameterIn != null && kUsed != null) {
+        (kUsed * diameterIn * boltLoadF) / 12.0
+    } else {
+        null
+    }
+
+    val calculationIssues = buildList {
+        if (referenceData == null) add("Reference data not loaded")
+        if (diameterIn == null) add("Diameter is required")
+        if (threadSeries.isBlank()) add("Thread series is required")
+        if (tpi == null) add("TPI not available for selected diameter/thread series")
+        if (asIn2 == null) add("Tensile stress area unavailable for selected diameter/thread series")
+        if (gradeKey == null) add("Bolt grade is required for calculation")
+        if (strengthKsi == null) add("Strength not available for selected grade/diameter")
+        if (usingAllowable && workingTemp == null) add("Working temperature is required")
+        if (methodIsUserInput && targetBoltLoadF.toDoubleOrNull() == null) add("Target bolt load F is required")
+        if (!methodIsUserInput && pctYield == null) add("Percent yield is required")
+        if (torqueWet && lube?.nutFactorK == null) add("Lubricant selection is required for wet torque")
+    }
+
+    LaunchedEffect(calculatedTorque, calculatedEdited) {
+        if (!calculatedEdited && calculatedTorque != null) {
+            calculatedTargetTorque = calculatedTorque.roundToInt().toString()
+        }
+    }
+
+    LaunchedEffect(fastenerSpec) {
+        if (fastenerSpec != "A453 Grade 660") {
+            fastenerClass = ""
         }
     }
 
@@ -400,7 +491,7 @@ fun FlangeFormScreen(
             )
         }
 
-        LabeledField(label = "Flange face free of scratches/nicks/gouges/burrs—especially radial damage") {
+        LabeledField(label = "Flange face free of scratches/nicks/gouges/burrs-especially radial damage") {
             DropdownField(
                 value = flangeFaceCondition,
                 options = yesRemediateOptions(),
@@ -453,6 +544,17 @@ fun FlangeFormScreen(
         }
         Spacer(modifier = Modifier.height(14.dp))
 
+        if (fastenerSpec == "A453 Grade 660") {
+            LabeledField(label = "A453 660 Class") {
+                DropdownField(
+                    value = fastenerClass,
+                    options = fastenerClassOptions(),
+                    placeholder = "Select class",
+                    onValueChange = { fastenerClass = it }
+                )
+            }
+        }
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -488,6 +590,26 @@ fun FlangeFormScreen(
         }
         Spacer(modifier = Modifier.height(14.dp))
 
+        LabeledField(label = "Thread Series") {
+            DropdownField(
+                value = threadSeries,
+                options = threadSeriesOptions(),
+                placeholder = "Select thread series",
+                onValueChange = { threadSeries = it }
+            )
+        }
+
+        LabeledField(label = "TPI (auto)") {
+            OutlinedTextField(
+                value = tpi?.toString().orEmpty(),
+                onValueChange = {},
+                readOnly = true,
+                singleLine = true,
+                placeholder = { Text("Select diameter + thread series") },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
         LabeledField(label = "Nuts") {
             DropdownField(
                 value = nutSpec,
@@ -508,14 +630,104 @@ fun FlangeFormScreen(
         )
         Spacer(modifier = Modifier.height(8.dp))
 
+        LabeledField(label = "Working Temperature ( F)") {
+            DropdownField(
+                value = workingTempF,
+                options = tempOptions,
+                placeholder = "Select temperature",
+                onValueChange = { workingTempF = it }
+            )
+            if (usedTempF.isNotBlank()) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "Rounded to: $usedTempF F",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = FlangeColors.TextSecondary
+                )
+            }
+        }
+
+        LabeledField(label = "Torque Method") {
+            DropdownField(
+                value = torqueMethod,
+                options = torqueMethodOptions(),
+                placeholder = "Select method",
+                onValueChange = { torqueMethod = it }
+            )
+        }
+
+        if (torqueMethod == "USER_INPUT") {
+            LabeledField(label = "Target Bolt Load F (lbf)") {
+                OutlinedTextField(
+                    value = targetBoltLoadF,
+                    onValueChange = { targetBoltLoadF = it },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        } else {
+            LabeledField(label = "Percent of Yield (default 0.50)") {
+                OutlinedTextField(
+                    value = pctYieldTarget,
+                    onValueChange = { pctYieldTarget = it },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+
+        if (strengthKsi != null) {
+            val strengthNote = if (usingAllowable && usedTempF.isNotBlank()) {
+                "Using S = $strengthKsi ksi at $usedTempF F"
+            } else {
+                "Using room-temp Sy = $strengthKsi ksi"
+            }
+            Text(
+                text = strengthNote,
+                style = MaterialTheme.typography.bodySmall,
+                color = FlangeColors.TextSecondary
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+        }
+
         LabeledField(label = "Calculated Target Torque (ft-lb)") {
             OutlinedTextField(
                 value = calculatedTargetTorque,
-                onValueChange = { calculatedTargetTorque = it },
+                onValueChange = {
+                    calculatedTargetTorque = it
+                    calculatedEdited = true
+                },
                 singleLine = true,
                 placeholder = { Text("Auto-calculated later") },
                 modifier = Modifier.fillMaxWidth()
             )
+            if (calculationIssues.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = calculationIssues.joinToString(separator = "; "),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = FlangeColors.DeleteButton
+                )
+            } else if (calculatedTorque != null) {
+                val methodLabel = if (torqueMethod == "USER_INPUT") {
+                    "F input"
+                } else {
+                    "Yield % ${formatPercent(pctYield)}"
+                }
+                val kLabel = if (torqueWet) {
+                    "K=${lube?.nutFactorK ?: "?"}"
+                } else {
+                    "K=0.27"
+                }
+                val tpiLabel = tpi?.toString() ?: "n/a"
+                val asLabel = asIn2?.let { String.format("%.4f", it) } ?: "n/a"
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "Calc: $methodLabel, $kLabel, TPI $tpiLabel, As $asLabel in^2",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = FlangeColors.TextSecondary
+                )
+            }
         }
 
         LabeledField(label = "Or Specified Target Torque (ft-lb)") {
@@ -527,12 +739,16 @@ fun FlangeFormScreen(
             )
         }
 
-        val baseTorque = specifiedTargetTorque.toDoubleOrNull()
-            ?: calculatedTargetTorque.toDoubleOrNull()
-            ?: 0.0
-        val lube = lubricantOptions().firstOrNull { it.value == lubricantType }
-        val lubePercent = lube?.percentOfDry ?: 1.0
-        val effectiveTorque = if (torqueWet) baseTorque * lubePercent else baseTorque
+        val specifiedTorqueValue = specifiedTargetTorque.toDoubleOrNull()
+        val calculatedTorqueValue = calculatedTargetTorque.toDoubleOrNull()
+        val lubePercent = if (torqueWet) (lube?.percentOfDry ?: 1.0) else 1.0
+        val effectiveTorque = when {
+            specifiedTorqueValue != null -> {
+                if (torqueWet) specifiedTorqueValue * lubePercent else specifiedTorqueValue
+            }
+            calculatedTorqueValue != null -> calculatedTorqueValue
+            else -> 0.0
+        }
 
         if (effectiveTorque > 0) {
             val effectiveLabel = if (torqueWet) {
@@ -556,7 +772,7 @@ fun FlangeFormScreen(
 
         TorquePassRow(
             label = "Pass #1. All bolts in sequence to 20% to 30% of the target torque.",
-            valueText = if (effectiveTorque > 0) String.format("%.0f–%.0f ft-lb", pass1Low, pass1High) else "",
+            valueText = if (effectiveTorque > 0) String.format("%.0f-%.0f ft-lb", pass1Low, pass1High) else "",
             checked = pass1Confirmed,
             onCheckedChange = { pass1Confirmed = it },
             initials = pass1Initials,
@@ -565,7 +781,7 @@ fun FlangeFormScreen(
 
         TorquePassRow(
             label = "Pass #2. All bolts in sequence to 50% to 70% of the target torque.",
-            valueText = if (effectiveTorque > 0) String.format("%.0f–%.0f ft-lb", pass2Low, pass2High) else "",
+            valueText = if (effectiveTorque > 0) String.format("%.0f-%.0f ft-lb", pass2Low, pass2High) else "",
             checked = pass2Confirmed,
             onCheckedChange = { pass2Confirmed = it },
             initials = pass2Initials,
@@ -617,9 +833,20 @@ fun FlangeFormScreen(
                         flangeParallel = flangeParallel,
                         fastenerType = fastenerType,
                         fastenerSpec = fastenerSpec,
+                        fastenerClass = fastenerClass,
                         fastenerLength = fastenerLength.trim(),
                         fastenerDiameter = fastenerDiameter,
+                        threadSeries = threadSeries,
                         nutSpec = nutSpec,
+                        workingTempF = workingTempF,
+                        roundedTempF = usedTempF,
+                        torqueMethod = torqueMethod,
+                        targetBoltLoadF = targetBoltLoadF.trim(),
+                        pctYieldTarget = pctYieldTarget.trim(),
+                        tpiUsed = tpi?.toString().orEmpty(),
+                        asUsed = asIn2?.let { String.format(\"%.4f\", it) }.orEmpty(),
+                        strengthKsiUsed = strengthKsi?.toString().orEmpty(),
+                        kUsed = kUsed?.toString().orEmpty(),
                         calculatedTargetTorque = calculatedTargetTorque.trim(),
                         specifiedTargetTorque = specifiedTargetTorque.trim(),
                         pass1Confirmed = pass1Confirmed,
@@ -779,7 +1006,7 @@ private fun gasketTypeOptions(): List<DropdownOption> = listOf(
     DropdownOption("Grooved metal"),
     DropdownOption("Flat solid metal"),
     DropdownOption("Flat metal jacketed"),
-    DropdownOption("Soft cut sheet, thickness ≤1/16\""),
+    DropdownOption("Soft cut sheet, thickness <=1/16\""),
     DropdownOption("Soft cut sheet, thickness >1/16\"")
 )
 
@@ -793,13 +1020,13 @@ private fun flangeClassOptions(): List<DropdownOption> = listOf(
 )
 
 private fun flangeFaceOptions(): List<DropdownOption> = listOf(
-    DropdownOption("RF", "RF — Raised Face", "RF"),
-    DropdownOption("FF", "FF — Flat Face", "FF"),
-    DropdownOption("LJF", "LJF — Lap Joint Face (used with lap joint flanges + stub ends)", "LJF"),
-    DropdownOption("RTJ", "RTJ — Ring-Type Joint (metal ring gasket)", "RTJ"),
-    DropdownOption("TF", "TF — Tongue Face", "TF"),
-    DropdownOption("GF", "GF — Groove Face", "GF"),
-    DropdownOption("M&F", "M&F — Male & Female (matching set)", "M&F")
+    DropdownOption("RF", "RF - Raised Face", "RF"),
+    DropdownOption("FF", "FF - Flat Face", "FF"),
+    DropdownOption("LJF", "LJF - Lap Joint Face (used with lap joint flanges + stub ends)", "LJF"),
+    DropdownOption("RTJ", "RTJ - Ring-Type Joint (metal ring gasket)", "RTJ"),
+    DropdownOption("TF", "TF - Tongue Face", "TF"),
+    DropdownOption("GF", "GF - Groove Face", "GF"),
+    DropdownOption("M&F", "M&F - Male & Female (matching set)", "M&F")
 )
 
 private fun boltHoleOptions(): List<DropdownOption> = (4..88 step 2).map { DropdownOption(it.toString()) }
@@ -825,12 +1052,42 @@ private fun fastenerSpecOptions(): List<DropdownOption> = listOf(
     DropdownOption("A453 Grade 660")
 )
 
+private fun fastenerClassOptions(): List<DropdownOption> = listOf(
+    DropdownOption("A"),
+    DropdownOption("B"),
+    DropdownOption("C"),
+    DropdownOption("D")
+)
+
+private fun threadSeriesOptions(): List<DropdownOption> = listOf(
+    DropdownOption("UNC"),
+    DropdownOption("UNF"),
+    DropdownOption("8UN")
+)
+
 private fun fastenerDiameterOptions(): List<DropdownOption> = listOf(
-    "1/2", "5/8", "3/4", "7/8", "1",
-    "1-1/8", "1-1/4", "1-3/8", "1-1/2", "1-5/8",
-    "1-3/4", "1-7/8", "2", "2-1/4", "2-1/2",
-    "2-3/4", "3", "3-1/4", "3-1/2", "3-3/4", "4 (in.)"
-).map { DropdownOption(it) }
+    DropdownOption("1/2"),
+    DropdownOption("5/8"),
+    DropdownOption("3/4"),
+    DropdownOption("7/8"),
+    DropdownOption("1"),
+    DropdownOption("1-1/8"),
+    DropdownOption("1-1/4"),
+    DropdownOption("1-3/8"),
+    DropdownOption("1-1/2"),
+    DropdownOption("1-5/8"),
+    DropdownOption("1-3/4"),
+    DropdownOption("1-7/8"),
+    DropdownOption("2"),
+    DropdownOption("2-1/4"),
+    DropdownOption("2-1/2"),
+    DropdownOption("2-3/4"),
+    DropdownOption("3"),
+    DropdownOption("3-1/4"),
+    DropdownOption("3-1/2"),
+    DropdownOption("3-3/4"),
+    DropdownOption(value = "4", menuLabel = "4 (in.)", displayLabel = "4")
+)
 
 private fun nutSpecOptions(): List<DropdownOption> = listOf(
     DropdownOption("A194 2H"),
@@ -845,27 +1102,157 @@ private fun nutSpecOptions(): List<DropdownOption> = listOf(
 private fun lubricantOptions(): List<DropdownOption> = listOf(
     DropdownOption(
         value = "Unlubricated (K 0.27)",
-        menuLabel = "Unlubricated (K 0.27) — 100% of dry torque",
-        percentOfDry = 1.0
+        menuLabel = "Unlubricated (K 0.27) - 100% of dry torque",
+        percentOfDry = 1.0,
+        nutFactorK = 0.27
     ),
     DropdownOption(
         value = "Moly paste (K 0.11)",
-        menuLabel = "Moly paste (K 0.11) — ~41% of dry torque",
-        percentOfDry = 0.41
+        menuLabel = "Moly paste (K 0.11) - ~41% of dry torque",
+        percentOfDry = 0.41,
+        nutFactorK = 0.11
     ),
     DropdownOption(
         value = "Never-Seez Regular (K 0.13)",
-        menuLabel = "Never-Seez Regular (K 0.13) — ~48% of dry torque",
-        percentOfDry = 0.48
+        menuLabel = "Never-Seez Regular (K 0.13) - ~48% of dry torque",
+        percentOfDry = 0.48,
+        nutFactorK = 0.13
     ),
     DropdownOption(
         value = "Copper/Nickel anti-seize (K 0.15)",
-        menuLabel = "Copper/Nickel anti-seize (K 0.15) — ~56% of dry torque",
-        percentOfDry = 0.56
+        menuLabel = "Copper/Nickel anti-seize (K 0.15) - ~56% of dry torque",
+        percentOfDry = 0.56,
+        nutFactorK = 0.15
     ),
     DropdownOption(
         value = "High-temp blends (K 0.17)",
-        menuLabel = "High-temp blends (K 0.17) — ~63% of dry torque",
-        percentOfDry = 0.63
+        menuLabel = "High-temp blends (K 0.17) - ~63% of dry torque",
+        percentOfDry = 0.63,
+        nutFactorK = 0.17
     )
 )
+
+private fun torqueMethodOptions(): List<DropdownOption> = listOf(
+    DropdownOption(value = "YIELD_PERCENT", menuLabel = "Calculate from yield", displayLabel = "Calculate from yield"),
+    DropdownOption(value = "USER_INPUT", menuLabel = "Use F directly", displayLabel = "Use F directly")
+)
+
+private fun buildTemperatureOptions(data: ReferenceData.Data?): List<DropdownOption> {
+    val maxTemp = data?.allowableStressLookup
+        ?.values
+        ?.flatMap { it }
+        ?.flatMap { it.temps }
+        ?.maxOfOrNull { it.tMax }
+        ?: 1000
+    val minTemp = 100
+    val temps = (minTemp..maxTemp step 50).map { it.toString() }
+    return temps.map { DropdownOption(it) }
+}
+
+private fun parsePercentValue(text: String): Double? {
+    val trimmed = text.trim()
+    if (trimmed.isEmpty()) return null
+    val value = trimmed.toDoubleOrNull() ?: return null
+    return if (value > 1.0) value / 100.0 else value
+}
+
+private fun formatPercent(value: Double?): String {
+    return if (value == null) "n/a" else String.format("%.0f%%", value * 100.0)
+}
+
+private data class AllowableResult(
+    val s: Double,
+    val usedTemp: Int
+)
+
+private fun lookupAllowableStress(
+    data: ReferenceData.Data?,
+    gradeKey: String?,
+    diameterIn: Double?,
+    workingTempF: Int?
+): AllowableResult? {
+    if (data == null || gradeKey == null || diameterIn == null || workingTempF == null) return null
+    val ranges = data.allowableStressLookup[gradeKey] ?: return null
+    val range = ranges.firstOrNull { diameterIn >= it.diaMin && diameterIn <= it.diaMax } ?: return null
+
+    val direct = range.temps.firstOrNull { workingTempF >= it.tMin && workingTempF <= it.tMax }
+    if (direct != null) {
+        return AllowableResult(s = direct.s, usedTemp = direct.tMax)
+    }
+
+    val next = range.temps
+        .filter { it.tMax >= workingTempF }
+        .minByOrNull { it.tMax }
+        ?: return null
+
+    return AllowableResult(s = next.s, usedTemp = next.tMax)
+}
+
+private fun parseDiameterInches(value: String): Double? {
+    if (value.isBlank()) return null
+    val normalized = value.replace(" (in.)", "").trim()
+    return if (normalized.contains("-")) {
+        val parts = normalized.split("-")
+        if (parts.size == 2) {
+            val whole = parts[0].toDoubleOrNull() ?: return null
+            val frac = parseFraction(parts[1]) ?: return null
+            whole + frac
+        } else {
+            normalized.toDoubleOrNull()
+        }
+    } else {
+        parseFraction(normalized) ?: normalized.toDoubleOrNull()
+    }
+}
+
+private fun parseFraction(value: String): Double? {
+    return if (value.contains("/")) {
+        val parts = value.split("/")
+        if (parts.size == 2) {
+            val num = parts[0].toDoubleOrNull() ?: return null
+            val den = parts[1].toDoubleOrNull() ?: return null
+            if (den == 0.0) null else num / den
+        } else {
+            null
+        }
+    } else {
+        value.toDoubleOrNull()
+    }
+}
+
+private fun normalizeDiameterKey(value: String): String {
+    return value.replace(" (in.)", "").trim()
+}
+
+private fun defaultThreadSeriesFor(diameterIn: Double?): String {
+    if (diameterIn == null) return ""
+    return if (diameterIn >= 1.0) "8UN" else "UNC"
+}
+
+private fun calculateTensileStressArea(diameterIn: Double?, tpi: Double?): Double? {
+    if (diameterIn == null || tpi == null || tpi == 0.0) return null
+    val term = diameterIn - (0.9743 / tpi)
+    return 0.7854 * term * term
+}
+
+private fun gradeKeyForSpec(spec: String, fastenerClass: String): String? {
+    return when (spec) {
+        "A193 B7" -> "A193_B7"
+        "A193 B16" -> "A193_B16"
+        "A193 B8 (304)" -> "A193_B8_Class1_304"
+        "A193 B8M (316)" -> "A193_B8M_Class1_316"
+        "A320 L7" -> "A320_L7"
+        "A193 B7M" -> "A193_B7M"
+        "A320 L7M" -> "A320_L7M"
+        "A453 Grade 660" -> if (fastenerClass.isNotBlank()) "A453_660_Class${fastenerClass}" else null
+        else -> null
+    }
+}
+
+private fun lookupSy(data: ReferenceData.Data?, gradeKey: String, diameterIn: Double?): Double? {
+    if (data == null || diameterIn == null) return null
+    val ranges = data.strengthLookup[gradeKey] ?: return null
+    return ranges.firstOrNull { diameterIn >= it.diaMin && diameterIn <= it.diaMax }?.sy
+}
+
+

@@ -1,0 +1,830 @@
+{
+  "flange_helper_reference_data": {
+    "version": "1.1",
+    "units": {
+      "diameter": "in",
+      "stress": "ksi",
+      "force": "lbf",
+      "torque": "ft-lbf"
+    },
+    "inputs_required_from_company": {
+      "nutFactorK_validation": "You must supply K values backed by manufacturer/test data for each lubricant you allow (this is where wet-vs-dry torque differences come from).",
+      "allowable_stress_at_temperature": "If you want at-temperature bolt strength, source it from your licensed ASME Section II Part D allowables (temperature-dependent). Use placeholders below."
+    },
+    "fasteners": {
+      "diameterOptions_in": [
+        "1/2",
+        "5/8",
+        "3/4",
+        "7/8",
+        "1",
+        "1-1/8",
+        "1-1/4",
+        "1-3/8",
+        "1-1/2",
+        "1-5/8",
+        "1-3/4",
+        "1-7/8",
+        "2",
+        "2-1/4",
+        "2-1/2",
+        "2-3/4",
+        "3",
+        "3-1/4",
+        "3-1/2",
+        "3-3/4",
+        "4"
+      ],
+      "threadSeriesOptions": [
+        "UNC",
+        "UNF",
+        "8UN"
+      ],
+      "threadSeriesDefaultRule": "IF D_in>=1.0 THEN default='8UN' ELSE default='UNC' (user can override)",
+      "tpi_lookup": {
+        "UNC": {
+          "1/2": 13,
+          "5/8": 11,
+          "3/4": 10,
+          "7/8": 9,
+          "1": 8,
+          "1-1/8": 7,
+          "1-1/4": 7,
+          "1-3/8": 6,
+          "1-1/2": 6,
+          "1-5/8": null,
+          "1-3/4": 5,
+          "1-7/8": null,
+          "2": 4.5,
+          "2-1/4": 4.5,
+          "2-1/2": 4,
+          "2-3/4": 4,
+          "3": 4,
+          "3-1/4": 4,
+          "3-1/2": 4,
+          "3-3/4": 4,
+          "4": 4
+        },
+        "UNF": {
+          "1/2": 20,
+          "5/8": 18,
+          "3/4": 16,
+          "7/8": 14,
+          "1": 12,
+          "1-1/8": 12,
+          "1-1/4": 12,
+          "1-3/8": 12,
+          "1-1/2": 12,
+          "1-5/8": null,
+          "1-3/4": null,
+          "1-7/8": null,
+          "2": null,
+          "2-1/4": null,
+          "2-1/2": null,
+          "2-3/4": null,
+          "3": null,
+          "3-1/4": null,
+          "3-1/2": null,
+          "3-3/4": null,
+          "4": null
+        },
+        "8UN": {
+          "1": 8,
+          "1-1/8": 8,
+          "1-1/4": 8,
+          "1-3/8": 8,
+          "1-1/2": 8,
+          "1-5/8": 8,
+          "1-3/4": 8,
+          "1-7/8": 8,
+          "2": 8,
+          "2-1/4": 8,
+          "2-1/2": 8,
+          "2-3/4": 8,
+          "3": 8,
+          "3-1/4": 8,
+          "3-1/2": 8,
+          "3-3/4": 8,
+          "4": 8
+        }
+      },
+      "tensileStressArea_As_in2_lookup": {
+        "UNC": {
+          "1/2": 0.1419,
+          "5/8": 0.226,
+          "3/4": 0.334,
+          "7/8": 0.462,
+          "1": 0.606,
+          "1-1/8": 0.763,
+          "1-1/4": 0.969,
+          "1-3/8": 1.155,
+          "1-1/2": 1.405,
+          "1-5/8": null,
+          "1-3/4": 1.9,
+          "1-7/8": null,
+          "2": 2.5,
+          "2-1/4": 3.25,
+          "2-1/2": 4.0,
+          "2-3/4": 4.93,
+          "3": 5.97,
+          "3-1/4": 7.1,
+          "3-1/2": 8.33,
+          "3-3/4": 9.66,
+          "4": 11.08
+        },
+        "UNF": {
+          "1/2": 0.1599,
+          "5/8": 0.256,
+          "3/4": 0.373,
+          "7/8": 0.509,
+          "1": 0.663,
+          "1-1/8": 0.856,
+          "1-1/4": 1.073,
+          "1-3/8": 1.315,
+          "1-1/2": 1.581,
+          "1-5/8": null,
+          "1-3/4": null,
+          "1-7/8": null,
+          "2": null,
+          "2-1/4": null,
+          "2-1/2": null,
+          "2-3/4": null,
+          "3": null,
+          "3-1/4": null,
+          "3-1/2": null,
+          "3-3/4": null,
+          "4": null
+        },
+        "8UN": {
+          "1": 0.606,
+          "1-1/8": 0.79,
+          "1-1/4": 1.0,
+          "1-3/8": 1.233,
+          "1-1/2": 1.492,
+          "1-5/8": 1.78,
+          "1-3/4": 2.08,
+          "1-7/8": 2.41,
+          "2": 2.77,
+          "2-1/4": 3.56,
+          "2-1/2": 4.44,
+          "2-3/4": 5.43,
+          "3": 6.51,
+          "3-1/4": 7.69,
+          "3-1/2": 8.96,
+          "3-3/4": 10.34,
+          "4": 11.81
+        }
+      },
+      "boltGrades": {
+        "options": [
+          "A193_B7",
+          "A193_B16",
+          "A193_B8_Class1_304",
+          "A193_B8M_Class1_316",
+          "A320_L7",
+          "A193_B7M",
+          "A320_L7M",
+          "A453_660_ClassA",
+          "A453_660_ClassB",
+          "A453_660_ClassC",
+          "A453_660_ClassD"
+        ],
+        "strength_Sy_Su_min_ksi": {
+          "A193_B7": [
+            {
+              "diaMin_in": 0.0,
+              "diaMax_in": 2.5,
+              "Sy": 105,
+              "Su": 125
+            },
+            {
+              "diaMin_in": 2.625,
+              "diaMax_in": 4.0,
+              "Sy": 95,
+              "Su": 115
+            },
+            {
+              "diaMin_in": 4.125,
+              "diaMax_in": 7.0,
+              "Sy": 75,
+              "Su": 100
+            }
+          ],
+          "A193_B16": [
+            {
+              "diaMin_in": 0.0,
+              "diaMax_in": 2.5,
+              "Sy": 105,
+              "Su": 125
+            },
+            {
+              "diaMin_in": 2.625,
+              "diaMax_in": 4.0,
+              "Sy": 95,
+              "Su": 110
+            },
+            {
+              "diaMin_in": 4.125,
+              "diaMax_in": 7.0,
+              "Sy": 85,
+              "Su": 100
+            }
+          ],
+          "A193_B8_Class1_304": [
+            {
+              "diaMin_in": 0.0,
+              "diaMax_in": 999.0,
+              "Sy": 30,
+              "Su": 75
+            }
+          ],
+          "A193_B8M_Class1_316": [
+            {
+              "diaMin_in": 0.0,
+              "diaMax_in": 999.0,
+              "Sy": 30,
+              "Su": 75
+            }
+          ],
+          "A320_L7": [
+            {
+              "diaMin_in": 0.0,
+              "diaMax_in": 2.5,
+              "Sy": 105,
+              "Su": 125
+            }
+          ],
+          "A193_B7M": [
+            {
+              "diaMin_in": 0.0,
+              "diaMax_in": 4.0,
+              "Sy": 80,
+              "Su": 100
+            },
+            {
+              "diaMin_in": 4.125,
+              "diaMax_in": 7.0,
+              "Sy": 75,
+              "Su": 100
+            }
+          ],
+          "A320_L7M": [
+            {
+              "diaMin_in": 0.0,
+              "diaMax_in": 2.5,
+              "Sy": 80,
+              "Su": 100
+            }
+          ],
+          "A453_660_ClassA": [
+            {
+              "diaMin_in": 0.0,
+              "diaMax_in": 999.0,
+              "Sy": "PLACEHOLDER_ksi_from_spec",
+              "Su": "PLACEHOLDER_ksi_from_spec"
+            }
+          ],
+          "A453_660_ClassB": [
+            {
+              "diaMin_in": 0.0,
+              "diaMax_in": 999.0,
+              "Sy": "PLACEHOLDER_ksi_from_spec",
+              "Su": "PLACEHOLDER_ksi_from_spec"
+            }
+          ],
+          "A453_660_ClassC": [
+            {
+              "diaMin_in": 0.0,
+              "diaMax_in": 999.0,
+              "Sy": "PLACEHOLDER_ksi_from_spec",
+              "Su": "PLACEHOLDER_ksi_from_spec"
+            }
+          ],
+          "A453_660_ClassD": [
+            {
+              "diaMin_in": 0.0,
+              "diaMax_in": 999.0,
+              "Sy": "PLACEHOLDER_ksi_from_spec",
+              "Su": "PLACEHOLDER_ksi_from_spec"
+            }
+          ]
+        },
+        "allowableStress_S_ksi_atTemp": {
+          "A193_B7": [
+            {
+              "diaMin_in": 0.0,
+              "diaMax_in": 2.5,
+              "temps": [
+                {
+                  "tMin": 100,
+                  "tMax": 550,
+                  "S": 25.0
+                },
+                {
+                  "tMin": 600,
+                  "tMax": 600,
+                  "S": 23.6
+                },
+                {
+                  "tMin": 650,
+                  "tMax": 650,
+                  "S": 21.0
+                },
+                {
+                  "tMin": 700,
+                  "tMax": 700,
+                  "S": 16.3
+                },
+                {
+                  "tMin": 750,
+                  "tMax": 750,
+                  "S": 12.5
+                }
+              ]
+            },
+            {
+              "diaMin_in": 2.501,
+              "diaMax_in": 4.0,
+              "temps": [
+                {
+                  "tMin": 100,
+                  "tMax": 550,
+                  "S": 23.0
+                },
+                {
+                  "tMin": 600,
+                  "tMax": 600,
+                  "S": 22.2
+                },
+                {
+                  "tMin": 650,
+                  "tMax": 650,
+                  "S": 20.0
+                },
+                {
+                  "tMin": 700,
+                  "tMax": 700,
+                  "S": 16.3
+                },
+                {
+                  "tMin": 750,
+                  "tMax": 750,
+                  "S": 12.5
+                }
+              ]
+            },
+            {
+              "diaMin_in": 4.001,
+              "diaMax_in": 7.0,
+              "temps": [
+                {
+                  "tMin": 100,
+                  "tMax": 600,
+                  "S": 18.8
+                },
+                {
+                  "tMin": 650,
+                  "tMax": 650,
+                  "S": 18.0
+                },
+                {
+                  "tMin": 700,
+                  "tMax": 700,
+                  "S": 16.3
+                },
+                {
+                  "tMin": 750,
+                  "tMax": 750,
+                  "S": 12.5
+                }
+              ]
+            }
+          ],
+          "A193_B7M": [
+            {
+              "diaMin_in": 0.0,
+              "diaMax_in": 2.5,
+              "temps": [
+                {
+                  "tMin": 100,
+                  "tMax": 600,
+                  "S": 20.0
+                },
+                {
+                  "tMin": 650,
+                  "tMax": 650,
+                  "S": 18.5
+                },
+                {
+                  "tMin": 700,
+                  "tMax": 700,
+                  "S": 16.3
+                },
+                {
+                  "tMin": 750,
+                  "tMax": 750,
+                  "S": 12.5
+                }
+              ]
+            }
+          ],
+          "A193_B16": [
+            {
+              "diaMin_in": 2.501,
+              "diaMax_in": 4.0,
+              "temps": [
+                {
+                  "tMin": 100,
+                  "tMax": 900,
+                  "S": 18.8
+                },
+                {
+                  "tMin": 950,
+                  "tMax": 950,
+                  "S": 17.7
+                },
+                {
+                  "tMin": 1000,
+                  "tMax": 1000,
+                  "S": 17.3
+                }
+              ]
+            },
+            {
+              "diaMin_in": 4.001,
+              "diaMax_in": 8.0,
+              "temps": [
+                {
+                  "tMin": 100,
+                  "tMax": 100,
+                  "S": 18.8
+                },
+                {
+                  "tMin": 150,
+                  "tMax": 150,
+                  "S": 16.7
+                },
+                {
+                  "tMin": 200,
+                  "tMax": 200,
+                  "S": 15.0
+                },
+                {
+                  "tMin": 250,
+                  "tMax": 250,
+                  "S": 13.8
+                },
+                {
+                  "tMin": 300,
+                  "tMax": 300,
+                  "S": 12.9
+                },
+                {
+                  "tMin": 350,
+                  "tMax": 350,
+                  "S": 12.1
+                },
+                {
+                  "tMin": 400,
+                  "tMax": 400,
+                  "S": 12.0
+                },
+                {
+                  "tMin": 450,
+                  "tMax": 450,
+                  "S": 11.8
+                },
+                {
+                  "tMin": 500,
+                  "tMax": 500,
+                  "S": 11.5
+                },
+                {
+                  "tMin": 550,
+                  "tMax": 550,
+                  "S": 11.2
+                },
+                {
+                  "tMin": 600,
+                  "tMax": 600,
+                  "S": 11.0
+                },
+                {
+                  "tMin": 650,
+                  "tMax": 650,
+                  "S": 10.8
+                }
+              ]
+            }
+          ],
+          "A320_L7M": [
+            {
+              "diaMin_in": 0.0,
+              "diaMax_in": 2.5,
+              "temps": [
+                {
+                  "tMin": 100,
+                  "tMax": 600,
+                  "S": 20.0
+                },
+                {
+                  "tMin": 650,
+                  "tMax": 650,
+                  "S": 18.5
+                },
+                {
+                  "tMin": 700,
+                  "tMax": 700,
+                  "S": 16.3
+                },
+                {
+                  "tMin": 750,
+                  "tMax": 750,
+                  "S": 12.5
+                }
+              ]
+            }
+          ],
+          "A320_L7": [
+            {
+              "diaMin_in": 0.0,
+              "diaMax_in": 2.5,
+              "temps": [
+                {
+                  "tMin": 100,
+                  "tMax": 550,
+                  "S": 25.0
+                },
+                {
+                  "tMin": 600,
+                  "tMax": 600,
+                  "S": 23.6
+                },
+                {
+                  "tMin": 650,
+                  "tMax": 650,
+                  "S": 21.0
+                }
+              ]
+            }
+          ],
+          "A453_660_ClassA": [
+            {
+              "diaMin_in": 0.0,
+              "diaMax_in": 999.0,
+              "temps": [
+                {
+                  "tMin": 950,
+                  "tMax": 950,
+                  "S": 21.3
+                },
+                {
+                  "tMin": 1000,
+                  "tMax": 1000,
+                  "S": 21.3
+                }
+              ]
+            }
+          ],
+          "A453_660_ClassB": [
+            {
+              "diaMin_in": 0.0,
+              "diaMax_in": 999.0,
+              "temps": [
+                {
+                  "tMin": 950,
+                  "tMax": 950,
+                  "S": 21.3
+                },
+                {
+                  "tMin": 1000,
+                  "tMax": 1000,
+                  "S": 21.3
+                }
+              ]
+            }
+          ],
+          "A193_B8M_Class1_316": [
+            {
+              "diaMin_in": 0.0,
+              "diaMax_in": 999.0,
+              "temps": [
+                {
+                  "tMin": 100,
+                  "tMax": 100,
+                  "S": 18.8
+                },
+                {
+                  "tMin": 150,
+                  "tMax": 150,
+                  "S": 17.7
+                },
+                {
+                  "tMin": 200,
+                  "tMax": 200,
+                  "S": 15.6
+                },
+                {
+                  "tMin": 250,
+                  "tMax": 250,
+                  "S": 14.3
+                },
+                {
+                  "tMin": 300,
+                  "tMax": 300,
+                  "S": 13.3
+                },
+                {
+                  "tMin": 350,
+                  "tMax": 350,
+                  "S": 12.6
+                },
+                {
+                  "tMin": 400,
+                  "tMax": 400,
+                  "S": 12.3
+                },
+                {
+                  "tMin": 450,
+                  "tMax": 450,
+                  "S": 12.1
+                },
+                {
+                  "tMin": 500,
+                  "tMax": 500,
+                  "S": 11.9
+                },
+                {
+                  "tMin": 550,
+                  "tMax": 550,
+                  "S": 11.7
+                },
+                {
+                  "tMin": 600,
+                  "tMax": 600,
+                  "S": 11.6
+                },
+                {
+                  "tMin": 650,
+                  "tMax": 650,
+                  "S": 11.5
+                },
+                {
+                  "tMin": 950,
+                  "tMax": 950,
+                  "S": 11.4
+                },
+                {
+                  "tMin": 1000,
+                  "tMax": 1000,
+                  "S": 11.3
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "nutGrades": {
+        "options": [
+          "A194_2H",
+          "A194_4",
+          "A194_8_304",
+          "A194_8M_316",
+          "A194_2HM",
+          "A194_7",
+          "A194_7M"
+        ]
+      },
+      "stud_vs_bolt": {
+        "options": [
+          "STUD",
+          "BOLT"
+        ],
+        "note": "Same torque math; just store length, stickout, and nut engagement checks."
+      }
+    },
+    "lubricants": {
+      "mode": {
+        "DRY": {
+          "selectable": true,
+          "K_default": "PLACEHOLDER_K_DRY_VALIDATED"
+        },
+        "WET": {
+          "selectable": true,
+          "requiresSelection": true
+        }
+      },
+      "wetOptions": [
+        {
+          "id": "MOLY_PASTE",
+          "name": "PLACEHOLDER_NAME",
+          "K": "PLACEHOLDER_K_VALIDATED",
+          "reference": "PLACEHOLDER_LINK_OR_DOC_ID"
+        },
+        {
+          "id": "NICKEL_ANTISEIZE",
+          "name": "PLACEHOLDER_NAME",
+          "K": "PLACEHOLDER_K_VALIDATED",
+          "reference": "PLACEHOLDER_LINK_OR_DOC_ID"
+        },
+        {
+          "id": "PTFE_BASED",
+          "name": "PLACEHOLDER_NAME",
+          "K": "PLACEHOLDER_K_VALIDATED",
+          "reference": "PLACEHOLDER_LINK_OR_DOC_ID"
+        }
+      ]
+    },
+    "torque_calculation": {
+      "target_torque_used_rule": "if specifiedTargetTorqueFtLb not null -> use it else use calculatedTargetTorqueFtLb",
+      "boltLoad_F_method": {
+        "default": "YIELD_PERCENT",
+        "options": {
+          "USER_INPUT": {
+            "fields": [
+              "F_lbf"
+            ]
+          },
+          "YIELD_PERCENT": {
+            "fields": [
+              "pctYieldTarget"
+            ],
+            "default_pctYieldTarget": 0.5,
+            "formula": "F_lbf = As_in2 * (Sy_ksi*1000) * pctYieldTarget"
+          }
+        }
+      },
+      "nut_factor_method": {
+        "formula": "T_ftlb = (K * D_in * F_lbf) / 12",
+        "inputs": [
+          "K",
+          "D_in",
+          "F_lbf"
+        ],
+        "note": "This is the common industry nut-factor relationship used in PCC-1-style practice; accuracy depends heavily on K validation."
+      },
+      "pass_logic": {
+        "pass1_allowed": [
+          0.2,
+          0.3
+        ],
+        "pass1_default": 0.3,
+        "pass2_allowed": [
+          0.5,
+          0.7
+        ],
+        "pass2_default": 0.6,
+        "pass3": 1.0,
+        "check": 1.0,
+        "autoPopulateFtLb": "passTorqueFtLb = targetTorqueUsedFtLb * passPct"
+      }
+    },
+    "tightening": {
+      "boltCountRange": {
+        "minEven": 4,
+        "maxEven": 88,
+        "step": 2
+      },
+      "boltNumbering": {
+        "direction": "CCW",
+        "rule": "User sets Bolt #1 reference position (e.g., 12 o'clock). App numbers CCW 1..N for display + check-pass circular order."
+      },
+      "sequenceLookup": {
+        "source": "YOU_ALREADY_CODED_THIS",
+        "sequenceByBoltCount_PLACEHOLDER": {
+          "8": [
+            1,
+            5,
+            3,
+            7,
+            2,
+            6,
+            4,
+            8
+          ]
+        }
+      }
+    },
+    "qa_checks": {
+      "flange_face_damage_dropdown": {
+        "label": "Flange face free of scratches/nicks/gouges/burrs - especially radial damage",
+        "options": [
+          "Yes",
+          "Anything other than Yes: Remediate the Problem and then Continue"
+        ]
+      },
+      "flange_parallel_dropdown": {
+        "label": "Flange faces are parallel and centered",
+        "options": [
+          "Yes",
+          "Anything other than Yes: Remediate the Problem and then Continue"
+        ]
+      },
+      "engagement_checks_PLACEHOLDER": {
+        "min_thread_engagement_rule": "PLACEHOLDER_company_rule_or_spec",
+        "min_stud_stickout_rule": "PLACEHOLDER_company_rule_or_spec",
+        "washer_policy_rule": "PLACEHOLDER_company_rule_or_spec"
+      }
+    }
+  }
+}

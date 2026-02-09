@@ -48,9 +48,20 @@ object JobStorage {
                                     flangeParallel = formObj.optString("flangeParallel"),
                                     fastenerType = formObj.optString("fastenerType"),
                                     fastenerSpec = formObj.optString("fastenerSpec"),
+                                    fastenerClass = formObj.optString("fastenerClass"),
                                     fastenerLength = formObj.optString("fastenerLength"),
                                     fastenerDiameter = formObj.optString("fastenerDiameter"),
+                                    threadSeries = formObj.optString("threadSeries"),
                                     nutSpec = formObj.optString("nutSpec"),
+                                    workingTempF = formObj.optString("workingTempF"),
+                                    roundedTempF = formObj.optString("roundedTempF"),
+                                    torqueMethod = formObj.optString("torqueMethod"),
+                                    targetBoltLoadF = formObj.optString("targetBoltLoadF"),
+                                    pctYieldTarget = formObj.optString("pctYieldTarget"),
+                                    tpiUsed = formObj.optString("tpiUsed"),
+                                    asUsed = formObj.optString("asUsed"),
+                                    strengthKsiUsed = formObj.optString("strengthKsiUsed"),
+                                    kUsed = formObj.optString("kUsed"),
                                     calculatedTargetTorque = formObj.optString("calculatedTargetTorque"),
                                     specifiedTargetTorque = formObj.optString("specifiedTargetTorque"),
                                     pass1Confirmed = formObj.optBoolean("pass1Confirmed"),
@@ -118,9 +129,20 @@ object JobStorage {
                 formObj.put("flangeParallel", form.flangeParallel)
                 formObj.put("fastenerType", form.fastenerType)
                 formObj.put("fastenerSpec", form.fastenerSpec)
+                formObj.put("fastenerClass", form.fastenerClass)
                 formObj.put("fastenerLength", form.fastenerLength)
                 formObj.put("fastenerDiameter", form.fastenerDiameter)
+                formObj.put("threadSeries", form.threadSeries)
                 formObj.put("nutSpec", form.nutSpec)
+                formObj.put("workingTempF", form.workingTempF)
+                formObj.put("roundedTempF", form.roundedTempF)
+                formObj.put("torqueMethod", form.torqueMethod)
+                formObj.put("targetBoltLoadF", form.targetBoltLoadF)
+                formObj.put("pctYieldTarget", form.pctYieldTarget)
+                formObj.put("tpiUsed", form.tpiUsed)
+                formObj.put("asUsed", form.asUsed)
+                formObj.put("strengthKsiUsed", form.strengthKsiUsed)
+                formObj.put("kUsed", form.kUsed)
                 formObj.put("calculatedTargetTorque", form.calculatedTargetTorque)
                 formObj.put("specifiedTargetTorque", form.specifiedTargetTorque)
                 formObj.put("pass1Confirmed", form.pass1Confirmed)

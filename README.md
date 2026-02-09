@@ -1,6 +1,6 @@
 ﻿# Flange Helper (Android)
 
-Flange Helper is a phone/tablet app that collects flange‑assembly data, performs a few calculations, captures an optional signature, and exports a PDF report. This repo is the Android implementation, designed to be visually consistent with the MaterialGuardian app so the suite feels familiar across products.
+Flange Helper is a phone/tablet app that collects flange‑assembly data, performs calculations, captures optional signatures and photos, and exports a PDF report. This repo is the Android implementation, designed to be visually consistent with the MaterialGuardian app so the suite feels familiar across products.
 
 ## Current State (What’s Done)
 
@@ -11,9 +11,11 @@ Flange Helper is a phone/tablet app that collects flange‑assembly data, perfor
     - Welders Helper logo + “Welders Helper”
     - Fade into start screen
   - Start screen styled to match MaterialGuardian (logo, primary button, divider, empty state).
-  - Placeholder first input screen with matching header/back button styling.
-- Color system aligned with MaterialGuardian.
-- Flange Helper logo imported for in‑app use.
+  - Job creation/edit flow with persistent storage.
+  - Flange form flow with extensive fields and torque pass checklist.
+- Storage usage meter on the start screen (750 MB budget).
+- Reference data file added for torque calculation.
+- Temperature‑based allowable stress support added for supported grades.
 
 ## Goal (What We’re Building)
 
@@ -29,7 +31,7 @@ Flange Helper is a phone/tablet app that collects flange‑assembly data, perfor
 
 ### App Flow
 - `app/src/main/java/com/kevin/flangejointassembly/MainActivity.kt`
-  - App entry. Controls splash → start screen → form screen.
+  - App entry. Controls splash → start screen → job detail → flange form.
 
 ### Splash Screen
 - `app/src/main/java/com/kevin/flangejointassembly/ui/SplashScreen.kt`
@@ -37,11 +39,27 @@ Flange Helper is a phone/tablet app that collects flange‑assembly data, perfor
 
 ### Start Screen (MaterialGuardian‑style)
 - `app/src/main/java/com/kevin/flangejointassembly/ui/StartScreen.kt`
-  - Logo, primary CTA button, divider, empty state.
+  - Logo, primary CTA button, divider, empty state, storage meter, and job list.
 
-### First Input Screen Placeholder
-- `app/src/main/java/com/kevin/flangejointassembly/ui/FormScreen.kt`
-  - Placeholder for the first report input page.
+### Job Detail Screen
+- `app/src/main/java/com/kevin/flangejointassembly/ui/JobDetailScreen.kt`
+  - Shows job info and launches new flange forms.
+
+### Flange Form
+- `app/src/main/java/com/kevin/flangejointassembly/ui/FlangeFormScreen.kt`
+  - Main report form with torque calculation inputs, QA checks, and pass checklist.
+
+### Data Models & Storage
+- `app/src/main/java/com/kevin/flangejointassembly/ui/JobModels.kt`
+  - Job + flange form data structures.
+- `app/src/main/java/com/kevin/flangejointassembly/ui/JobStorage.kt`
+  - JSON persistence for jobs + forms in app‑private storage.
+
+### Reference Data (Torque Calculation)
+- `app/src/main/assets/flange_reference.json`
+  - Diameter/TPI lookup, tensile stress area, and allowable stress vs temperature.
+- `app/src/main/java/com/kevin/flangejointassembly/ui/ReferenceData.kt`
+  - Loads reference data and exposes helpers for torque calculation.
 
 ### Header / Back Button Style
 - `app/src/main/java/com/kevin/flangejointassembly/ui/components/FlangeHeader.kt`
@@ -78,10 +96,18 @@ Flange Helper is a phone/tablet app that collects flange‑assembly data, perfor
 - Generated images use: `WIDTHxHEIGHT_FH_Android.png` and `WIDTHxHEIGHT_FH_iOS.png`.
 - Drawable names are lowercase with underscores to match Android conventions.
 
+## Torque Calculation Notes
+
+- Target torque uses:
+  - `F = As * S_ksi * 1000 * pctYield`
+  - `T = (K * D * F) / 12`
+- If **Specified Target Torque** is entered, it overrides calculated torque.
+- If **Wet Torque** is selected and **Specified Target Torque** is used, the specified value is adjusted by the selected lube percent.
+- Allowable stress at temperature is used when data is available for a grade; otherwise room‑temp Sy is used.
+
 ## Next Steps
 
-- Wire the real report form fields, dropdowns, and formulas.
-- Add bolt‑pattern diagram components.
-- Implement PDF export and optional signature capture.
-- Replace launcher icons with Flange Helper assets.
-- Build report history/templates if required.
+- Add remaining allowable stress data (B8, A453 660 Class C/D, B8M additional classes).
+- Add bolt‑sequence lookup tables for all bolt counts.
+- Implement photo capture, signatures, and PDF export.
+- Add bolt‑pattern diagram rendering.
