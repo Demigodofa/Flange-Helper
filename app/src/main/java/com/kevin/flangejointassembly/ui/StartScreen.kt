@@ -39,10 +39,14 @@ import com.kevin.flangejointassembly.R
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.LinearProgressIndicator
+import kotlin.math.roundToInt
 
 @Composable
 fun StartScreen(
     jobs: List<JobItem>,
+    storageUsedBytes: Long,
+    storageLimitBytes: Long,
     onCreateJob: () -> Unit,
     onJobClick: (JobItem) -> Unit,
     onEditJob: (JobItem) -> Unit,
@@ -110,6 +114,12 @@ fun StartScreen(
                 )
                 Spacer(modifier = Modifier.height(12.dp))
 
+                StorageMeter(
+                    usedBytes = storageUsedBytes,
+                    limitBytes = storageLimitBytes
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
                 if (jobs.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(
@@ -166,6 +176,46 @@ fun StartScreen(
                     Text("No")
                 }
             }
+        )
+    }
+}
+
+@Composable
+private fun StorageMeter(
+    usedBytes: Long,
+    limitBytes: Long
+) {
+    val safeLimit = if (limitBytes > 0) limitBytes else 1L
+    val ratio = (usedBytes.toFloat() / safeLimit.toFloat()).coerceIn(0f, 1f)
+    val percent = (ratio * 100).roundToInt()
+    val usedMb = usedBytes / (1024f * 1024f)
+    val limitMb = limitBytes / (1024f * 1024f)
+
+    Column {
+        Text(
+            text = "Storage Usage: $percent%",
+            style = TextStyle(
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold
+            ),
+            color = FlangeColors.TextPrimary
+        )
+        Spacer(modifier = Modifier.height(6.dp))
+        LinearProgressIndicator(
+            progress = ratio,
+            color = FlangeColors.PrimaryButton,
+            trackColor = FlangeColors.Divider,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+        )
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            text = String.format("%.1f MB of %.0f MB used", usedMb, limitMb),
+            style = TextStyle(
+                fontSize = 12.sp
+            ),
+            color = FlangeColors.TextSecondary
         )
     }
 }
