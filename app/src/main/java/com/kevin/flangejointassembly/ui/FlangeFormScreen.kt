@@ -194,8 +194,6 @@ fun FlangeFormScreen(
     val boltSequence = boltHoleCount?.let {
         referenceData?.boltSequenceLookup?.get(it) ?: generateBoltSequence(it)
     }.orEmpty()
-    val numberingRuleText = referenceData?.boltNumberingRule?.takeIf { it.isNotBlank() }
-        ?: "Bolt #1 at ~12 o'clock; number clockwise 1..N for display and check-pass order."
     val numberingDirectionText = referenceData?.boltNumberingDirection?.takeIf { it.isNotBlank() } ?: "CW"
 
     LaunchedEffect(tempOptions) {
@@ -499,14 +497,12 @@ fun FlangeFormScreen(
             )
         }
         if (boltHoleCount != null) {
-            LabeledField(label = "Bolt Numbering ($numberingDirectionText)") {
-                Text(
-                    text = numberingRuleText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = FlangeColors.TextSecondary
-                )
+            val directionWord = if (numberingDirectionText.uppercase() == "CCW") {
+                "counterclockwise"
+            } else {
+                "clockwise"
             }
-            LabeledField(label = "Tightening Sequence") {
+            LabeledField(label = "Tightening Order (Report)") {
                 if (boltSequence.isEmpty()) {
                     Text(
                         text = "Sequence not available for this bolt count.",
@@ -514,7 +510,13 @@ fun FlangeFormScreen(
                         color = FlangeColors.TextSecondary
                     )
                 } else {
-                    SequenceBox(text = formatSequence(boltSequence))
+                    SequenceBox(
+                        text = buildReportLine(
+                            boltCount = boltHoleCount,
+                            directionWord = directionWord,
+                            sequence = boltSequence
+                        )
+                    )
                 }
             }
         }
@@ -1044,11 +1046,14 @@ private fun SequenceBox(text: String) {
     }
 }
 
-private fun formatSequence(sequence: List<Int>, perLine: Int = 12): String {
-    if (sequence.isEmpty()) return ""
-    return sequence.chunked(perLine).joinToString("\n") { chunk ->
-        chunk.joinToString(", ")
-    }
+private fun buildReportLine(
+    boltCount: Int,
+    directionWord: String,
+    sequence: List<Int>
+): String {
+    val sequenceText = sequence.joinToString(", ")
+    return "$boltCount bolt holes, numbered from 12 o'clock going $directionWord.\n" +
+        "Tightening order: $sequenceText"
 }
 
 private fun generateBoltSequence(boltCount: Int): List<Int> {
