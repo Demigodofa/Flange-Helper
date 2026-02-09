@@ -16,7 +16,8 @@ Flange Helper is a phone/tablet app that collects flange‑assembly data, perfor
 - Storage usage meter on the start screen (750 MB budget).
 - Reference data file added for torque calculation.
 - Temperature‑based allowable stress support added for supported grades.
-- Bolt tightening sequences added to reference data (clockwise numbering; currently populated for 4, 8, 12, 16, ... 88 as provided).
+- Bolt tightening sequences added to reference data (clockwise numbering; populated for all even counts 4–88).
+- Tightening sequence display wired into the flange form (numbering rule + sequence list).
 
 ## Goal (What We’re Building)
 
@@ -109,7 +110,5 @@ Flange Helper is a phone/tablet app that collects flange‑assembly data, perfor
 ## Next Steps
 
 - Add remaining allowable stress data (B8, A453 660 Class C/D, B8M additional classes).
-- Fill missing bolt‑sequence counts (6, 10, 14, 18, 22, 26, 30, 34, 38, 42, 46, 50, 54, 58, 62, 66, 70, 74, 78, 82, 86) if you want full even coverage.
-- Wire bolt‑sequence lookup into the form UI (show numbering order + tightening order).
 - Implement photo capture, signatures, and PDF export.
 - Add bolt‑pattern diagram rendering.

@@ -6,6 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -189,6 +190,13 @@ fun FlangeFormScreen(
     val strengthKsi = allowable?.s ?: syKsi
     val roundedTemp = allowable?.usedTemp
     val usingAllowable = allowable != null
+    val boltHoleCount = boltHoles.toIntOrNull()
+    val boltSequence = boltHoleCount?.let {
+        referenceData?.boltSequenceLookup?.get(it) ?: generateBoltSequence(it)
+    }.orEmpty()
+    val numberingRuleText = referenceData?.boltNumberingRule?.takeIf { it.isNotBlank() }
+        ?: "Bolt #1 at ~12 o'clock; number clockwise 1..N for display and check-pass order."
+    val numberingDirectionText = referenceData?.boltNumberingDirection?.takeIf { it.isNotBlank() } ?: "CW"
 
     LaunchedEffect(tempOptions) {
         if (workingTempF.isBlank() && tempOptions.isNotEmpty()) {
@@ -489,6 +497,26 @@ fun FlangeFormScreen(
                 placeholder = "Select bolt holes",
                 onValueChange = { boltHoles = it }
             )
+        }
+        if (boltHoleCount != null) {
+            LabeledField(label = "Bolt Numbering ($numberingDirectionText)") {
+                Text(
+                    text = numberingRuleText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = FlangeColors.TextSecondary
+                )
+            }
+            LabeledField(label = "Tightening Sequence") {
+                if (boltSequence.isEmpty()) {
+                    Text(
+                        text = "Sequence not available for this bolt count.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = FlangeColors.TextSecondary
+                    )
+                } else {
+                    SequenceBox(text = formatSequence(boltSequence))
+                }
+            }
         }
 
         LabeledField(label = "Flange face free of scratches/nicks/gouges/burrs-especially radial damage") {
@@ -997,6 +1025,61 @@ private fun TorquePassRow(
         }
         Spacer(modifier = Modifier.height(16.dp))
     }
+}
+
+@Composable
+private fun SequenceBox(text: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, FlangeColors.Divider, RoundedCornerShape(10.dp))
+            .background(androidx.compose.ui.graphics.Color.White, RoundedCornerShape(10.dp))
+            .padding(12.dp)
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodySmall,
+            color = FlangeColors.TextPrimary
+        )
+    }
+}
+
+private fun formatSequence(sequence: List<Int>, perLine: Int = 12): String {
+    if (sequence.isEmpty()) return ""
+    return sequence.chunked(perLine).joinToString("\n") { chunk ->
+        chunk.joinToString(", ")
+    }
+}
+
+private fun generateBoltSequence(boltCount: Int): List<Int> {
+    if (boltCount < 4 || boltCount % 2 != 0) return emptyList()
+    val half = boltCount / 2
+    var pow2 = 1
+    var bits = 0
+    while (pow2 < half) {
+        pow2 = pow2 shl 1
+        bits += 1
+    }
+    val order = mutableListOf<Int>()
+    for (i in 0 until pow2) {
+        val rev = reverseBits(i, bits)
+        if (rev < half) {
+            order.add(rev)
+        }
+    }
+    val odds = order.map { 2 * it + 1 }
+    val evens = order.map { 2 * it + 2 }
+    return odds + evens
+}
+
+private fun reverseBits(value: Int, bitCount: Int): Int {
+    var v = value
+    var result = 0
+    repeat(bitCount) {
+        result = (result shl 1) or (v and 1)
+        v = v shr 1
+    }
+    return result
 }
 
 private fun gasketTypeOptions(): List<DropdownOption> = listOf(

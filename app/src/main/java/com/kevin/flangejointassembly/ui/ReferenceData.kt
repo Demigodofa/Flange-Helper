@@ -27,7 +27,10 @@ object ReferenceData {
         val tpiLookup: Map<String, Map<String, Double?>>,
         val asLookup: Map<String, Map<String, Double?>>,
         val strengthLookup: Map<String, List<StrengthRange>>,
-        val allowableStressLookup: Map<String, List<AllowableStressRange>>
+        val allowableStressLookup: Map<String, List<AllowableStressRange>>,
+        val boltSequenceLookup: Map<Int, List<Int>>,
+        val boltNumberingDirection: String,
+        val boltNumberingRule: String
     )
 
     fun load(context: Context): Data {
@@ -92,18 +95,55 @@ object ReferenceData {
                 }
             }
 
+            var boltSequenceLookup: Map<Int, List<Int>> = emptyMap()
+            var boltNumberingDirection = ""
+            var boltNumberingRule = ""
+
+            val tightening = root.optJSONObject("tightening")
+            if (tightening != null) {
+                val numbering = tightening.optJSONObject("boltNumbering")
+                if (numbering != null) {
+                    boltNumberingDirection = numbering.optString("direction")
+                    boltNumberingRule = numbering.optString("rule")
+                }
+
+                val sequenceByCount = tightening
+                    .optJSONObject("sequenceLookup")
+                    ?.optJSONObject("sequenceByBoltCount")
+
+                if (sequenceByCount != null) {
+                    val sequences = mutableMapOf<Int, List<Int>>()
+                    for (key in sequenceByCount.keys()) {
+                        val count = key.toIntOrNull() ?: continue
+                        val array = sequenceByCount.getJSONArray(key)
+                        val list = mutableListOf<Int>()
+                        for (i in 0 until array.length()) {
+                            list.add(array.optInt(i))
+                        }
+                        sequences[count] = list
+                    }
+                    boltSequenceLookup = sequences
+                }
+            }
+
             Data(
                 tpiLookup = tpiLookup,
                 asLookup = asLookup,
                 strengthLookup = strengthLookup,
-                allowableStressLookup = allowableStressLookup
+                allowableStressLookup = allowableStressLookup,
+                boltSequenceLookup = boltSequenceLookup,
+                boltNumberingDirection = boltNumberingDirection,
+                boltNumberingRule = boltNumberingRule
             )
         } catch (_: Exception) {
             Data(
                 tpiLookup = emptyMap(),
                 asLookup = emptyMap(),
                 strengthLookup = emptyMap(),
-                allowableStressLookup = emptyMap()
+                allowableStressLookup = emptyMap(),
+                boltSequenceLookup = emptyMap(),
+                boltNumberingDirection = "",
+                boltNumberingRule = ""
             )
         }
     }
