@@ -59,6 +59,7 @@ fun exportJobToPdf(context: Context, job: JobItem): Uri? {
         val linePaint = Paint().apply {
             color = Color.BLACK
             strokeWidth = 1f
+            style = Paint.Style.STROKE
         }
 
         var y = MARGIN + 22
@@ -194,9 +195,9 @@ fun exportJobToPdf(context: Context, job: JobItem): Uri? {
         y += 18
         val boltCount = form.boltHoles.toIntOrNull()
         if (boltCount != null) {
-            val markingOrder = generateBoltSequence(boltCount).joinToString(", ")
+            val markingOrder = generateBoltSequence(boltCount).take(4).joinToString(", ")
             val boltNote = "Starting at the 12 o'clock position and moving clockwise, " +
-                "mark each bolt in this order: $markingOrder. " +
+                "mark each bolt in this order: $markingOrder ... " +
                 "Tightening order: sequential 1, 2, 3, 4 ..."
             val lines = wrapText(boltNote, labelPaint, PAGE_WIDTH - 2 * MARGIN)
             lines.forEach { line ->
@@ -240,10 +241,14 @@ fun exportJobToPdf(context: Context, job: JobItem): Uri? {
 
                 val bitmap = loadBitmap(context, uriString)
                 if (bitmap != null) {
-                    val scaled = scaleBitmapToFit(bitmap, cellWidth - 16, cellHeight - 16)
-                    val destLeft = left + (cellWidth - scaled.width) / 2
-                    val destTop = top + (cellHeight - scaled.height) / 2
-                    photoCanvas.drawBitmap(scaled, destLeft.toFloat(), destTop.toFloat(), null)
+                    val inset = 8
+                    val destRect = Rect(
+                        left + inset,
+                        top + inset,
+                        left + cellWidth - inset,
+                        top + cellHeight - inset
+                    )
+                    photoCanvas.drawBitmap(bitmap, null, destRect, null)
                 }
             }
 
@@ -288,8 +293,11 @@ private fun drawSignatureBlock(
 private fun loadBitmap(context: Context, uriString: String): Bitmap? {
     return runCatching {
         val uri = Uri.parse(uriString)
+        val options = BitmapFactory.Options().apply {
+            inScaled = false
+        }
         context.contentResolver.openInputStream(uri)?.use { stream ->
-            BitmapFactory.decodeStream(stream)
+            BitmapFactory.decodeStream(stream, null, options)
         }
     }.getOrNull()
 }
@@ -347,10 +355,13 @@ private fun drawSignatureBox(
     if (signatureUri.isNotBlank()) {
         val bitmap = loadBitmap(context, signatureUri)
         if (bitmap != null) {
-            val scaled = scaleBitmapToFit(bitmap, boxWidth - 6, boxHeight - 6)
-            val left = boxLeft + (boxWidth - scaled.width) / 2
-            val top = boxTop + (boxHeight - scaled.height) / 2
-            canvas.drawBitmap(scaled, left.toFloat(), top.toFloat(), null)
+            val destRect = Rect(
+                boxLeft + 3,
+                boxTop + 3,
+                boxLeft + boxWidth - 3,
+                boxTop + boxHeight - 3
+            )
+            canvas.drawBitmap(bitmap, null, destRect, null)
         }
     }
     return y + boxHeight

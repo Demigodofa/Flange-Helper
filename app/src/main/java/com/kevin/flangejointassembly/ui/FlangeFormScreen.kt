@@ -1799,7 +1799,7 @@ private fun SignatureDialog(
 }
 
 private fun renderSignatureBitmap(strokes: List<List<Offset>>, size: IntSize): android.graphics.Bitmap {
-    val scale = 2
+    val scale = 3
     val width = (size.width.coerceAtLeast(1)) * scale
     val height = (size.height.coerceAtLeast(1)) * scale
     val bitmap = android.graphics.Bitmap.createBitmap(width, height, android.graphics.Bitmap.Config.ARGB_8888)
@@ -1807,7 +1807,7 @@ private fun renderSignatureBitmap(strokes: List<List<Offset>>, size: IntSize): a
     canvas.drawColor(android.graphics.Color.WHITE)
     val paint = android.graphics.Paint().apply {
         color = android.graphics.Color.BLACK
-        strokeWidth = 10f
+        strokeWidth = 12f
         style = android.graphics.Paint.Style.STROKE
         strokeJoin = android.graphics.Paint.Join.ROUND
         strokeCap = android.graphics.Paint.Cap.ROUND
