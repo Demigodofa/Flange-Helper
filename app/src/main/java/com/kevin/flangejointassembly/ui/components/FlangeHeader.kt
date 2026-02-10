@@ -12,30 +12,19 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.kevin.flangejointassembly.R
 import com.kevin.flangejointassembly.ui.FlangeColors
 
 @Composable
 fun FlangeHeader(
     onBack: () -> Unit,
-    logoResName: String = "flange_helper_512"
+    logoResId: Int = R.drawable.flange_helper_512
 ) {
-    val context = LocalContext.current
-    val logoResId = remember(context, logoResName) {
-        val id = context.resources.getIdentifier(
-            logoResName,
-            "drawable",
-            context.packageName
-        )
-        if (id != 0) id else android.R.drawable.sym_def_app_icon
-    }
-
     Box(modifier = Modifier.fillMaxWidth()) {
         Surface(
             modifier = Modifier

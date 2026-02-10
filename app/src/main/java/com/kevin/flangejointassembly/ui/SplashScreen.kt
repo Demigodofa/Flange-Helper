@@ -21,7 +21,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -33,15 +32,7 @@ import kotlinx.coroutines.delay
 fun SplashScreen(onTimeout: () -> Unit) {
     val alpha = remember { Animatable(0f) }
     var phase by remember { mutableIntStateOf(0) }
-    val context = LocalContext.current
-    val logoResId = remember(context) {
-        val weldersId = context.resources.getIdentifier(
-            "welders_helper_main_program",
-            "drawable",
-            context.packageName
-        )
-        if (weldersId != 0) weldersId else R.drawable.flange_helper_512
-    }
+    val logoResId = R.drawable.welders_helper_main_program
 
     LaunchedEffect(Unit) {
         phase = 0

@@ -1,6 +1,7 @@
 package com.kevin.flangejointassembly.ui
 
 import android.content.Context
+import android.net.Uri
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -190,6 +191,38 @@ object JobStorage {
         return calculateDirectorySize(root)
     }
 
+    fun cleanupOrphanedFiles(
+        context: Context,
+        jobs: List<JobItem>,
+        deleteExports: Boolean
+    ) {
+        val root = storageRoot(context)
+        val photosDir = File(root, "photos")
+        val signaturesDir = File(root, "signatures")
+        val exportsDir = File(root, "exports")
+
+        val referenced = mutableSetOf<File>()
+        jobs.forEach { job ->
+            job.flangeForms.forEach { form ->
+                form.photoUris.forEach { uri ->
+                    fileFromContentUri(context, uri)?.let { referenced.add(it) }
+                }
+                if (form.contractorSignUri.isNotBlank()) {
+                    fileFromContentUri(context, form.contractorSignUri)?.let { referenced.add(it) }
+                }
+                if (form.facilitySignUri.isNotBlank()) {
+                    fileFromContentUri(context, form.facilitySignUri)?.let { referenced.add(it) }
+                }
+            }
+        }
+
+        deleteUnreferencedFiles(photosDir, referenced)
+        deleteUnreferencedFiles(signaturesDir, referenced)
+        if (deleteExports) {
+            deleteAllFiles(exportsDir)
+        }
+    }
+
     private fun storageRoot(context: Context): File {
         return File(context.filesDir, STORAGE_DIR)
     }
@@ -202,5 +235,33 @@ object JobStorage {
             total += calculateDirectorySize(child)
         }
         return total
+    }
+
+    private fun deleteUnreferencedFiles(dir: File, referenced: Set<File>) {
+        if (!dir.exists() || !dir.isDirectory) return
+        dir.listFiles()?.forEach { file ->
+            if (file.isFile && file !in referenced) {
+                file.delete()
+            }
+        }
+    }
+
+    private fun deleteAllFiles(dir: File) {
+        if (!dir.exists() || !dir.isDirectory) return
+        dir.listFiles()?.forEach { file ->
+            if (file.isFile) file.delete()
+        }
+    }
+
+    private fun fileFromContentUri(context: Context, uriString: String): File? {
+        val uri = Uri.parse(uriString)
+        if (uri.scheme != "content") return null
+        val path = uri.path ?: return null
+        val marker = "/$STORAGE_DIR/"
+        val index = path.indexOf(marker)
+        if (index == -1) return null
+        val relative = path.substring(index + marker.length)
+        if (relative.isBlank()) return null
+        return File(storageRoot(context), relative)
     }
 }

@@ -39,29 +39,25 @@ android {
 }
 
 val apkOutputDir = layout.buildDirectory.dir("outputs/apk")
+val apkRenamedDir = layout.buildDirectory.dir("outputs/apk-renamed")
 
 tasks.register<Copy>("renameDebugApk") {
-    dependsOn("assembleDebug")
     from(apkOutputDir.map { it.dir("debug") })
     include("app-debug.apk")
     rename("app-debug.apk", "FlangeHelper-debug.apk")
-    into(apkOutputDir.map { it.dir("debug") })
+    into(apkRenamedDir.map { it.dir("debug") })
 }
 
 tasks.register<Copy>("renameReleaseApk") {
-    dependsOn("assembleRelease")
     from(apkOutputDir.map { it.dir("release") })
     include("app-release.apk")
     rename("app-release.apk", "FlangeHelper-release.apk")
-    into(apkOutputDir.map { it.dir("release") })
+    into(apkRenamedDir.map { it.dir("release") })
 }
 
-tasks.named("assembleDebug").configure {
-    finalizedBy("renameDebugApk")
-}
-
-tasks.named("assembleRelease").configure {
-    finalizedBy("renameReleaseApk")
+afterEvaluate {
+    tasks.findByName("assembleDebug")?.finalizedBy("renameDebugApk")
+    tasks.findByName("assembleRelease")?.finalizedBy("renameReleaseApk")
 }
 
 dependencies {

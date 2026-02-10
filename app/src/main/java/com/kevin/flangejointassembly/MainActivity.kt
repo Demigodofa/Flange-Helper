@@ -21,6 +21,7 @@ import com.kevin.flangejointassembly.ui.JobItem
 import com.kevin.flangejointassembly.ui.JobStorage
 import com.kevin.flangejointassembly.ui.SplashScreen
 import com.kevin.flangejointassembly.ui.StartScreen
+import com.kevin.flangejointassembly.ui.PdfExportMode
 import com.kevin.flangejointassembly.ui.exportJobToPdf
 import java.util.UUID
 
@@ -57,6 +58,11 @@ fun FlangeApp() {
     fun persistJobs(updatedJobs: List<JobItem>) {
         jobs = updatedJobs
         JobStorage.saveJobs(context, updatedJobs)
+        JobStorage.cleanupOrphanedFiles(
+            context = context,
+            jobs = updatedJobs,
+            deleteExports = updatedJobs.isEmpty()
+        )
         storageUsedBytes = JobStorage.calculateStorageBytes(context)
     }
 
@@ -89,8 +95,8 @@ fun FlangeApp() {
                     editingJobId = job.id
                     currentScreen = FlangeScreen.JobForm
                 },
-                onExportJob = { job ->
-                    val uri = exportJobToPdf(context, job)
+                onExportJob = { job, mode ->
+                    val uri = exportJobToPdf(context, job, mode)
                     if (uri != null) {
                         sharePdf(uri)
                     } else {

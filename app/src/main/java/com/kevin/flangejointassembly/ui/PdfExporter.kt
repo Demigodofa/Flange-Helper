@@ -11,14 +11,27 @@ import android.graphics.Paint
 import androidx.core.content.FileProvider
 import java.io.File
 import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 
 private const val PAGE_WIDTH = 612
 private const val PAGE_HEIGHT = 792
 private const val MARGIN = 36
+private const val PDF_PHOTO_MAX_EDGE_PX = 1600
 
-fun exportJobToPdf(context: Context, job: JobItem): Uri? {
+enum class PdfExportMode {
+    EMAIL_FRIENDLY,
+    FULL_RES
+}
+
+fun exportJobToPdf(
+    context: Context,
+    job: JobItem,
+    mode: PdfExportMode = PdfExportMode.EMAIL_FRIENDLY
+): Uri? {
     if (job.flangeForms.isEmpty()) return null
 
     val exportDir = File(context.filesDir, "flange_helper/exports")
@@ -83,10 +96,10 @@ fun exportJobToPdf(context: Context, job: JobItem): Uri? {
         val rightValueOffset = 150
         val rightValueWidth = PAGE_WIDTH - rightX - MARGIN - rightValueOffset
 
-        fun drawField(x: Int, label: String, value: String, width: Int): Int {
+        fun drawField(x: Int, label: String, value: String, maxValueWidth: Int): Int {
             canvas.drawText(label, x.toFloat(), y.toFloat(), labelPaint)
             val text = if (value.isBlank()) "-" else value
-            val fitted = fitText(text, valuePaint, width)
+            val fitted = fitText(text, valuePaint, maxValueWidth)
             canvas.drawText(fitted, (x + valueOffset).toFloat(), y.toFloat(), valuePaint)
             return 14
         }
@@ -144,11 +157,12 @@ fun exportJobToPdf(context: Context, job: JobItem): Uri? {
             "Pass4" to formatPassLine(form, 4)
         )
 
-        val dataTop = y - 6
+        y += 8
+        val dataTop = y - 8
         val rows = max(leftFields.size, rightFields.size)
         for (i in 0 until rows) {
             if (i < leftFields.size) {
-                y += drawField(leftX, leftFields[i].first, leftFields[i].second, columnWidth)
+                y += drawField(leftX, leftFields[i].first, leftFields[i].second, valueWidth)
             }
             if (i < rightFields.size) {
                 drawFieldRight(rightFields[i].first, rightFields[i].second)
@@ -160,7 +174,7 @@ fun exportJobToPdf(context: Context, job: JobItem): Uri? {
         canvas.drawRect(leftBox, linePaint)
         canvas.drawRect(rightBox, linePaint)
 
-        y += 12
+        y += 22
         y = drawSignatureSection(
             context = context,
             canvas = canvas,
@@ -242,13 +256,18 @@ fun exportJobToPdf(context: Context, job: JobItem): Uri? {
                 val bitmap = loadBitmap(context, uriString)
                 if (bitmap != null) {
                     val inset = 8
+                    val scaled = if (mode == PdfExportMode.EMAIL_FRIENDLY) {
+                        scaleBitmapMaxEdge(bitmap, PDF_PHOTO_MAX_EDGE_PX)
+                    } else {
+                        bitmap
+                    }
                     val destRect = Rect(
                         left + inset,
                         top + inset,
                         left + cellWidth - inset,
                         top + cellHeight - inset
                     )
-                    photoCanvas.drawBitmap(bitmap, null, destRect, null)
+                    photoCanvas.drawBitmap(scaled, null, destRect, null)
                 }
             }
 
@@ -397,9 +416,9 @@ private fun formatPassLine(form: FlangeFormItem, pass: Int): String {
     val low = target * lowPct
     val high = target * highPct
     val range = if (pass <= 2) {
-        String.format("%.0f-%.0f ft-lb", low, high)
+        String.format(Locale.US, "%.0f-%.0f ft-lb", low, high)
     } else {
-        String.format("%.0f ft-lb", high)
+        String.format(Locale.US, "%.0f ft-lb", high)
     }
     val initials = when (pass) {
         1 -> form.pass1Initials
@@ -462,16 +481,16 @@ private fun reverseBits(value: Int, bitCount: Int): Int {
     return result
 }
 
-private fun scaleBitmapToFit(bitmap: Bitmap, maxWidth: Int, maxHeight: Int): Bitmap {
-    val ratio = min(maxWidth.toFloat() / bitmap.width.toFloat(), maxHeight.toFloat() / bitmap.height.toFloat())
+private fun scaleBitmapMaxEdge(bitmap: Bitmap, maxEdge: Int): Bitmap {
+    val edge = max(bitmap.width, bitmap.height)
+    if (edge <= maxEdge) return bitmap
+    val ratio = maxEdge.toFloat() / edge.toFloat()
     val newWidth = max(1, (bitmap.width * ratio).toInt())
     val newHeight = max(1, (bitmap.height * ratio).toInt())
     return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
 }
 
 private fun formatDateForFile(millis: Long): String {
-    val date = java.time.Instant.ofEpochMilli(millis)
-        .atZone(java.time.ZoneId.systemDefault())
-        .toLocalDate()
-    return date.format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE)
+    val formatter = SimpleDateFormat("yyyyMMdd", Locale.US)
+    return formatter.format(Date(millis))
 }

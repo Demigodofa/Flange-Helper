@@ -41,6 +41,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.LinearProgressIndicator
 import kotlin.math.roundToInt
+import java.util.Locale
 
 @Composable
 fun StartScreen(
@@ -50,10 +51,11 @@ fun StartScreen(
     onCreateJob: () -> Unit,
     onJobClick: (JobItem) -> Unit,
     onEditJob: (JobItem) -> Unit,
-    onExportJob: (JobItem) -> Unit,
+    onExportJob: (JobItem, PdfExportMode) -> Unit,
     onDeleteJob: (JobItem) -> Unit
 ) {
     val jobToDelete = remember { mutableStateOf<JobItem?>(null) }
+    val jobToExport = remember { mutableStateOf<JobItem?>(null) }
 
     Scaffold(
         containerColor = FlangeColors.ScreenBackground
@@ -147,7 +149,7 @@ fun StartScreen(
                                 job = job,
                                 onClick = { onJobClick(job) },
                                 onEdit = { onEditJob(job) },
-                                onExport = { onExportJob(job) },
+                                onExport = { jobToExport.value = job },
                                 onDelete = { jobToDelete.value = job }
                             )
                         }
@@ -178,6 +180,36 @@ fun StartScreen(
             }
         )
     }
+
+    val pendingExport = jobToExport.value
+    if (pendingExport != null) {
+        AlertDialog(
+            onDismissRequest = { jobToExport.value = null },
+            title = { Text("Export Job") },
+            text = { Text("Choose export size:") },
+            confirmButton = {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = {
+                        onExportJob(pendingExport, PdfExportMode.EMAIL_FRIENDLY)
+                        jobToExport.value = null
+                    }) {
+                        Text("Email-friendly")
+                    }
+                    TextButton(onClick = {
+                        onExportJob(pendingExport, PdfExportMode.FULL_RES)
+                        jobToExport.value = null
+                    }) {
+                        Text("Full-res")
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { jobToExport.value = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 }
 
 @Composable
@@ -202,7 +234,7 @@ private fun StorageMeter(
         )
         Spacer(modifier = Modifier.height(6.dp))
         LinearProgressIndicator(
-            progress = ratio,
+            progress = { ratio },
             color = FlangeColors.PrimaryButton,
             trackColor = FlangeColors.Divider,
             modifier = Modifier
@@ -211,7 +243,7 @@ private fun StorageMeter(
         )
         Spacer(modifier = Modifier.height(6.dp))
         Text(
-            text = String.format("%.1f MB of %.0f MB used", usedMb, limitMb),
+            text = String.format(Locale.US, "%.1f MB of %.0f MB used", usedMb, limitMb),
             style = TextStyle(
                 fontSize = 12.sp
             ),
