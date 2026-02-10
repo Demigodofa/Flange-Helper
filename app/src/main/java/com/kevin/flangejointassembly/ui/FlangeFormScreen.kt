@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -34,6 +37,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,8 +53,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.graphics.asImageBitmap
 import com.kevin.flangejointassembly.ui.components.FlangeHeader
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.AlertDialog
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.core.content.FileProvider
 import kotlin.math.roundToInt
+import java.io.File
+import android.graphics.BitmapFactory
+import android.net.Uri
 
 private data class DropdownOption(
     val value: String,
@@ -113,6 +127,13 @@ fun FlangeFormScreen(
     var specifiedTargetTorque by remember { mutableStateOf("") }
     var calculatedEdited by remember { mutableStateOf(false) }
     var useCustomTorque by remember { mutableStateOf(false) }
+    val photoUris = remember { mutableStateListOf<String>() }
+    var pendingPhotoUri by remember { mutableStateOf<Uri?>(null) }
+    var pendingPhotoPath by remember { mutableStateOf<String?>(null) }
+    var showPhotoReview by remember { mutableStateOf(false) }
+    var showMaxPhotosDialog by remember { mutableStateOf(false) }
+    var showDeletePhotoDialog by remember { mutableStateOf(false) }
+    var deletePhotoIndex by remember { mutableStateOf(-1) }
     var pass1Confirmed by remember { mutableStateOf(false) }
     var pass1Initials by remember { mutableStateOf("") }
     var pass2Confirmed by remember { mutableStateOf(false) }
@@ -169,6 +190,132 @@ fun FlangeFormScreen(
         ) {
             DatePicker(state = wrenchCalPickerState)
         }
+    }
+
+    if (showPhotoReview && pendingPhotoUri != null) {
+        AlertDialog(
+            onDismissRequest = { },
+            title = { Text("Review Photo") },
+            text = {
+                PhotoPreview(uri = pendingPhotoUri!!)
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingPhotoUri?.let { photoUris.add(it.toString()) }
+                    pendingPhotoUri = null
+                    pendingPhotoPath = null
+                    showPhotoReview = false
+                    if (photoUris.size >= 4) {
+                        showMaxPhotosDialog = true
+                    }
+                }) {
+                    Text("Keep")
+                }
+            },
+            dismissButton = {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    TextButton(onClick = {
+                        pendingPhotoPath?.let { File(it).delete() }
+                        pendingPhotoUri = null
+                        pendingPhotoPath = null
+                        showPhotoReview = false
+                        launchCamera()
+                    }) {
+                        Text("Retake")
+                    }
+                    TextButton(onClick = {
+                        pendingPhotoPath?.let { File(it).delete() }
+                        pendingPhotoUri = null
+                        pendingPhotoPath = null
+                        showPhotoReview = false
+                    }) {
+                        Text("Exit")
+                    }
+                }
+            }
+        )
+    }
+
+    if (showMaxPhotosDialog) {
+        AlertDialog(
+            onDismissRequest = { showMaxPhotosDialog = false },
+            title = { Text("Max photos taken") },
+            text = { Text("You have taken 4 photos. Exit now?") },
+            confirmButton = {
+                TextButton(onClick = { showMaxPhotosDialog = false }) {
+                    Text("Exit")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showMaxPhotosDialog = false }) {
+                    Text("Keep")
+                }
+            }
+        )
+    }
+
+    if (showDeletePhotoDialog && deletePhotoIndex in photoUris.indices) {
+        AlertDialog(
+            onDismissRequest = { showDeletePhotoDialog = false },
+            title = { Text("Delete Photo") },
+            text = { Text("Are you sure you want to delete this photo?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    val uriString = photoUris[deletePhotoIndex]
+                    deletePhotoIndex = -1
+                    showDeletePhotoDialog = false
+                    photoUris.remove(uriString)
+                    runCatching {
+                        val uri = Uri.parse(uriString)
+                        if (uri.scheme == "content") {
+                            context.contentResolver.delete(uri, null, null)
+                        }
+                    }
+                }) {
+                    Text("Yes")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    deletePhotoIndex = -1
+                    showDeletePhotoDialog = false
+                }) {
+                    Text("No")
+                }
+            }
+        )
+    }
+
+    val takePictureLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success && pendingPhotoUri != null) {
+            showPhotoReview = true
+        } else {
+            pendingPhotoPath?.let { File(it).delete() }
+            pendingPhotoUri = null
+            pendingPhotoPath = null
+        }
+    }
+
+    fun launchCamera() {
+        if (photoUris.size >= 4) {
+            showMaxPhotosDialog = true
+            return
+        }
+        val photosDir = File(context.filesDir, "flange_helper/photos")
+        if (!photosDir.exists()) {
+            photosDir.mkdirs()
+        }
+        val file = File(photosDir, "photo_${System.currentTimeMillis()}.jpg")
+        val uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
+        pendingPhotoUri = uri
+        pendingPhotoPath = file.absolutePath
+        takePictureLauncher.launch(uri)
     }
 
     val diameterIn = parseDiameterInches(fastenerDiameter)
@@ -971,6 +1118,53 @@ fun FlangeFormScreen(
             onInitialsChange = { pass4Initials = it.take(4) }
         )
 
+        Text(
+            text = "Take up to 4 Photos",
+            style = MaterialTheme.typography.titleMedium,
+            color = FlangeColors.TextPrimary
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(
+            onClick = { launchCamera() },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = FlangeColors.PrimaryButton,
+                contentColor = FlangeColors.PrimaryButtonText
+            ),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            val remaining = 4 - photoUris.size
+            val label = if (remaining > 0) "Add Photo ($remaining remaining)" else "Max photos taken"
+            Text(label)
+        }
+        Spacer(modifier = Modifier.height(10.dp))
+        if (photoUris.isEmpty()) {
+            Text(
+                text = "No photos yet.",
+                style = MaterialTheme.typography.bodySmall,
+                color = FlangeColors.TextMuted
+            )
+        } else {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                photoUris.forEachIndexed { index, uriString ->
+                    PhotoThumbnail(
+                        uriString = uriString,
+                        onDelete = {
+                            deletePhotoIndex = index
+                            showDeletePhotoDialog = true
+                        }
+                    )
+                }
+            }
+        }
+
         Spacer(modifier = Modifier.height(20.dp))
         Button(
             onClick = {
@@ -1021,7 +1215,8 @@ fun FlangeFormScreen(
                         pass3Confirmed = pass3Confirmed,
                         pass3Initials = pass3Initials.trim(),
                         pass4Confirmed = pass4Confirmed,
-                        pass4Initials = pass4Initials.trim()
+                        pass4Initials = pass4Initials.trim(),
+                        photoUris = photoUris.toList()
                     )
                 )
             },
@@ -1178,6 +1373,85 @@ private fun SequenceBox(text: String) {
             style = MaterialTheme.typography.bodySmall,
             color = FlangeColors.TextPrimary
         )
+    }
+}
+
+@Composable
+private fun PhotoPreview(uri: Uri) {
+    val context = LocalContext.current
+    var bitmap by remember(uri) { mutableStateOf<android.graphics.Bitmap?>(null) }
+
+    LaunchedEffect(uri) {
+        runCatching {
+            context.contentResolver.openInputStream(uri)?.use { stream ->
+                bitmap = BitmapFactory.decodeStream(stream)
+            }
+        }
+    }
+
+    if (bitmap != null) {
+        Image(
+            bitmap = bitmap!!.asImageBitmap(),
+            contentDescription = "Captured photo",
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(240.dp)
+        )
+    } else {
+        Text(
+            text = "Loading photo...",
+            style = MaterialTheme.typography.bodySmall,
+            color = FlangeColors.TextSecondary
+        )
+    }
+}
+
+@Composable
+private fun PhotoThumbnail(
+    uriString: String,
+    onDelete: () -> Unit
+) {
+    val context = LocalContext.current
+    val uri = remember(uriString) { Uri.parse(uriString) }
+    var bitmap by remember(uriString) { mutableStateOf<android.graphics.Bitmap?>(null) }
+
+    LaunchedEffect(uriString) {
+        runCatching {
+            context.contentResolver.openInputStream(uri)?.use { stream ->
+                bitmap = BitmapFactory.decodeStream(stream)
+            }
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .width(96.dp)
+            .height(96.dp)
+            .border(1.dp, FlangeColors.Divider, RoundedCornerShape(10.dp))
+            .background(Color.White, RoundedCornerShape(10.dp))
+    ) {
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap!!.asImageBitmap(),
+                contentDescription = "Photo thumbnail",
+                modifier = Modifier
+                    .fillMaxSize()
+            )
+        }
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(4.dp)
+                .background(Color(0xCCFFFFFF), RoundedCornerShape(10.dp))
+                .clickable { onDelete() }
+                .padding(2.dp)
+        ) {
+            androidx.compose.material3.Icon(
+                imageVector = Icons.Filled.Close,
+                contentDescription = "Delete photo",
+                tint = FlangeColors.DeleteButton
+            )
+        }
     }
 }
 

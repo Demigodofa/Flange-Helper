@@ -71,7 +71,15 @@ object JobStorage {
                                     pass3Confirmed = formObj.optBoolean("pass3Confirmed"),
                                     pass3Initials = formObj.optString("pass3Initials"),
                                     pass4Confirmed = formObj.optBoolean("pass4Confirmed"),
-                                    pass4Initials = formObj.optString("pass4Initials")
+                                    pass4Initials = formObj.optString("pass4Initials"),
+                                    photoUris = run {
+                                        val photosArray = formObj.optJSONArray("photoUris") ?: JSONArray()
+                                        buildList {
+                                            for (k in 0 until photosArray.length()) {
+                                                add(photosArray.optString(k))
+                                            }
+                                        }
+                                    }
                                 )
                             )
                         }
@@ -153,6 +161,9 @@ object JobStorage {
                 formObj.put("pass3Initials", form.pass3Initials)
                 formObj.put("pass4Confirmed", form.pass4Confirmed)
                 formObj.put("pass4Initials", form.pass4Initials)
+                val photosArray = JSONArray()
+                form.photoUris.forEach { uri -> photosArray.put(uri) }
+                formObj.put("photoUris", photosArray)
                 formsArray.put(formObj)
             }
             obj.put("forms", formsArray)
