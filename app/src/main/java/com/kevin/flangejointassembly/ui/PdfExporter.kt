@@ -31,8 +31,9 @@ fun exportJobToPdf(context: Context, job: JobItem): Uri? {
 
     val document = PdfDocument()
 
+    var pageNumber = 1
     job.flangeForms.forEachIndexed { index, form ->
-        val pageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, document.pageCount + 1).create()
+        val pageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageNumber++).create()
         val page = document.startPage(pageInfo)
         val canvas = page.canvas
 
@@ -164,7 +165,7 @@ fun exportJobToPdf(context: Context, job: JobItem): Uri? {
         document.finishPage(page)
 
         if (form.photoUris.isNotEmpty()) {
-            val photoPageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, document.pageCount + 1).create()
+            val photoPageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageNumber++).create()
             val photoPage = document.startPage(photoPageInfo)
             val photoCanvas = photoPage.canvas
 
