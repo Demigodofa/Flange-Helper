@@ -185,7 +185,8 @@ object ReferenceData {
                                 allowCalculatedTorque = obj.optBoolean("allowCalculatedTorque", true),
                                 targetMethod = obj.optString("target_method"),
                                 defaults = GasketDefaults(
-                                    boltStressPctYieldDefault = defaultsObj?.opt("boltStressPctYield_default") as? Number
+                                    boltStressPctYieldDefault = (defaultsObj
+                                        ?.opt("boltStressPctYield_default") as? Number)
                                         ?.toDouble(),
                                     boltStressPctYieldAllowed = allowedList,
                                     specifiedTargetTorqueRequired = defaultsObj?.optBoolean("specifiedTargetTorque_required")
