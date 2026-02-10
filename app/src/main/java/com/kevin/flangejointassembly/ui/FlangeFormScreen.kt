@@ -112,6 +112,7 @@ fun FlangeFormScreen(
     var calculatedTargetTorque by remember { mutableStateOf("") }
     var specifiedTargetTorque by remember { mutableStateOf("") }
     var calculatedEdited by remember { mutableStateOf(false) }
+    var useCustomTorque by remember { mutableStateOf(false) }
     var pass1Confirmed by remember { mutableStateOf(false) }
     var pass1Initials by remember { mutableStateOf("") }
     var pass2Confirmed by remember { mutableStateOf(false) }
@@ -214,6 +215,7 @@ fun FlangeFormScreen(
         }
         if (requiresSpecifiedTorque) {
             torqueMethod = "USER_INPUT"
+            useCustomTorque = true
         }
     }
 
@@ -238,7 +240,7 @@ fun FlangeFormScreen(
     }
 
     val specifiedTorqueValue = specifiedTargetTorque.toDoubleOrNull()
-    val usingSpecifiedTorque = specifiedTorqueValue != null
+    val usingSpecifiedTorque = specifiedTorqueValue != null && (useCustomTorque || requiresSpecifiedTorque)
 
     val calculationIssues = buildList {
         if (!usingSpecifiedTorque) {
@@ -260,11 +262,14 @@ fun FlangeFormScreen(
         if (requiresSpecifiedTorque && specifiedTargetTorque.toDoubleOrNull() == null) {
             add("Specified target torque is required for this gasket type")
         }
+        if (useCustomTorque && specifiedTargetTorque.toDoubleOrNull() == null) {
+            add("Custom final torque is enabled, but no torque value is entered")
+        }
         if (torqueWet && lube?.nutFactorK == null) add("Lubricant selection is required for wet torque")
     }
 
-    LaunchedEffect(calculatedTorque, calculatedEdited) {
-        if (!calculatedEdited && calculatedTorque != null) {
+    LaunchedEffect(calculatedTorque, calculatedEdited, useCustomTorque) {
+        if (!useCustomTorque && !calculatedEdited && calculatedTorque != null) {
             calculatedTargetTorque = calculatedTorque.roundToInt().toString()
         }
     }
@@ -868,21 +873,49 @@ fun FlangeFormScreen(
             }
         }
 
-        LabeledField(label = "Or Specified Target Torque (ft-lb)") {
-            OutlinedTextField(
-                value = specifiedTargetTorque,
-                onValueChange = { specifiedTargetTorque = it },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
+        LabeledField(label = "Specified Final Target Torque (ft-lb)") {
+            Column {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Checkbox(
+                        checked = useCustomTorque,
+                        onCheckedChange = {
+                            if (requiresSpecifiedTorque) {
+                                useCustomTorque = true
+                            } else {
+                                useCustomTorque = it
+                            }
+                        }
+                    )
+                    Text("Use Custom Final Torque")
+                }
+                Spacer(modifier = Modifier.height(6.dp))
+                OutlinedTextField(
+                    value = specifiedTargetTorque,
+                    onValueChange = { specifiedTargetTorque = it },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Enter final target torque") }
+                )
+                if (specifiedTorqueValue != null && !useCustomTorque && !requiresSpecifiedTorque) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "Enable custom torque to use this value.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = FlangeColors.TextSecondary
+                    )
+                }
+            }
         }
 
     val calculatedTorqueValue = calculatedTargetTorque.toDoubleOrNull()
-    val effectiveTorque = when {
-        usingSpecifiedTorque -> specifiedTorqueValue ?: 0.0
-        calculatedTorqueValue != null -> calculatedTorqueValue
-        else -> 0.0
-    }
+        val effectiveTorque = when {
+            usingSpecifiedTorque -> specifiedTorqueValue ?: 0.0
+            calculatedTorqueValue != null -> calculatedTorqueValue
+            else -> 0.0
+        }
 
         if (effectiveTorque > 0) {
             val effectiveLabel = String.format("Final Target Torque: %.0f ft-lb", effectiveTorque)
