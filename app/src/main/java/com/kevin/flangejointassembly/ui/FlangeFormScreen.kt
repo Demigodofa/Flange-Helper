@@ -326,7 +326,8 @@ fun FlangeFormScreen(
                 trailingIcon = {
                     androidx.compose.material3.Icon(
                         imageVector = Icons.Filled.DateRange,
-                        contentDescription = "Select date"
+                        contentDescription = "Select date",
+                        modifier = Modifier.clickable { showDatePicker = true }
                     )
                 },
                 modifier = Modifier
@@ -465,7 +466,8 @@ fun FlangeFormScreen(
                     trailingIcon = {
                         androidx.compose.material3.Icon(
                             imageVector = Icons.Filled.DateRange,
-                            contentDescription = "Select calibration date"
+                            contentDescription = "Select calibration date",
+                            modifier = Modifier.clickable { showWrenchCalPicker = true }
                         )
                     },
                     placeholder = { Text("Select date") },

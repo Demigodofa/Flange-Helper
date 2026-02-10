@@ -140,7 +140,8 @@ fun JobFormScreen(
             trailingIcon = {
                 androidx.compose.material3.Icon(
                     imageVector = Icons.Filled.DateRange,
-                    contentDescription = "Select date"
+                    contentDescription = "Select date",
+                    modifier = Modifier.clickable { showDatePicker = true }
                 )
             },
             modifier = Modifier

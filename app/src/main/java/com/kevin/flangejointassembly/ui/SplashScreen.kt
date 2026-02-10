@@ -85,17 +85,6 @@ fun SplashScreen(onTimeout: () -> Unit) {
                         .size(220.dp)
                         .alpha(alpha.value)
                 )
-                Spacer(modifier = Modifier.height(20.dp))
-                Text(
-                    text = "Welders Helper",
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontSize = 30.sp,
-                        lineHeight = 34.sp
-                    ),
-                    fontWeight = FontWeight.Bold,
-                    color = FlangeColors.Title,
-                    modifier = Modifier.alpha(alpha.value)
-                )
             }
         }
     }
