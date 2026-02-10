@@ -1007,7 +1007,7 @@ fun FlangeFormScreen(
                         targetBoltLoadF = targetBoltLoadF.trim(),
                         pctYieldTarget = pctYieldTarget.trim(),
                         tpiUsed = tpi?.toString().orEmpty(),
-                        asUsed = asIn2?.let { String.format(\"%.4f\", it) }.orEmpty(),
+                        asUsed = asIn2?.let { String.format("%.4f", it) }.orEmpty(),
                         strengthKsiUsed = strengthKsi?.toString().orEmpty(),
                         kUsed = kUsed?.toString().orEmpty(),
                         calculatedTargetTorque = calculatedTargetTorque.trim(),
