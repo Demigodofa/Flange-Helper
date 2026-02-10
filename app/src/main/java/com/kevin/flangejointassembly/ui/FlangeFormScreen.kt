@@ -192,50 +192,6 @@ fun FlangeFormScreen(
         }
     }
 
-    if (showPhotoReview && pendingPhotoUri != null) {
-        AlertDialog(
-            onDismissRequest = { },
-            title = { Text("Review Photo") },
-            text = {
-                PhotoPreview(uri = pendingPhotoUri!!)
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    pendingPhotoUri?.let { photoUris.add(it.toString()) }
-                    pendingPhotoUri = null
-                    pendingPhotoPath = null
-                    showPhotoReview = false
-                    if (photoUris.size >= 4) {
-                        showMaxPhotosDialog = true
-                    }
-                }) {
-                    Text("Keep")
-                }
-            },
-            dismissButton = {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    TextButton(onClick = {
-                        pendingPhotoPath?.let { File(it).delete() }
-                        pendingPhotoUri = null
-                        pendingPhotoPath = null
-                        showPhotoReview = false
-                        launchCamera()
-                    }) {
-                        Text("Retake")
-                    }
-                    TextButton(onClick = {
-                        pendingPhotoPath?.let { File(it).delete() }
-                        pendingPhotoUri = null
-                        pendingPhotoPath = null
-                        showPhotoReview = false
-                    }) {
-                        Text("Exit")
-                    }
-                }
-            }
-        )
-    }
-
     if (showMaxPhotosDialog) {
         AlertDialog(
             onDismissRequest = { showMaxPhotosDialog = false },
@@ -316,6 +272,50 @@ fun FlangeFormScreen(
         pendingPhotoUri = uri
         pendingPhotoPath = file.absolutePath
         takePictureLauncher.launch(uri)
+    }
+
+    if (showPhotoReview && pendingPhotoUri != null) {
+        AlertDialog(
+            onDismissRequest = { },
+            title = { Text("Review Photo") },
+            text = {
+                PhotoPreview(uri = pendingPhotoUri!!)
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingPhotoUri?.let { photoUris.add(it.toString()) }
+                    pendingPhotoUri = null
+                    pendingPhotoPath = null
+                    showPhotoReview = false
+                    if (photoUris.size >= 4) {
+                        showMaxPhotosDialog = true
+                    }
+                }) {
+                    Text("Keep")
+                }
+            },
+            dismissButton = {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    TextButton(onClick = {
+                        pendingPhotoPath?.let { File(it).delete() }
+                        pendingPhotoUri = null
+                        pendingPhotoPath = null
+                        showPhotoReview = false
+                        launchCamera()
+                    }) {
+                        Text("Retake")
+                    }
+                    TextButton(onClick = {
+                        pendingPhotoPath?.let { File(it).delete() }
+                        pendingPhotoUri = null
+                        pendingPhotoPath = null
+                        showPhotoReview = false
+                    }) {
+                        Text("Exit")
+                    }
+                }
+            }
+        )
     }
 
     val diameterIn = parseDiameterInches(fastenerDiameter)
