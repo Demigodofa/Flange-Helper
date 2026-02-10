@@ -183,7 +183,7 @@ fun FlangeFormScreen(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
                 TextButton(onClick = {
-                    datePickerState.selectedDateMillis?.let { dateMillis = it }
+                    datePickerState.selectedDateMillis?.let { dateMillis = normalizePickerMillis(it) }
                     showDatePicker = false
                 }) {
                     Text("OK")
@@ -204,7 +204,7 @@ fun FlangeFormScreen(
             onDismissRequest = { showWrenchCalPicker = false },
             confirmButton = {
                 TextButton(onClick = {
-                    wrenchCalPickerState.selectedDateMillis?.let { wrenchCalDateMillis = it }
+                    wrenchCalPickerState.selectedDateMillis?.let { wrenchCalDateMillis = normalizePickerMillis(it) }
                     showWrenchCalPicker = false
                 }) {
                     Text("OK")
@@ -225,7 +225,7 @@ fun FlangeFormScreen(
             onDismissRequest = { showContractorDatePicker = false },
             confirmButton = {
                 TextButton(onClick = {
-                    contractorDatePickerState.selectedDateMillis?.let { contractorDateMillis = it }
+                    contractorDatePickerState.selectedDateMillis?.let { contractorDateMillis = normalizePickerMillis(it) }
                     showContractorDatePicker = false
                 }) {
                     Text("OK")
@@ -246,7 +246,7 @@ fun FlangeFormScreen(
             onDismissRequest = { showFacilityDatePicker = false },
             confirmButton = {
                 TextButton(onClick = {
-                    facilityDatePickerState.selectedDateMillis?.let { facilityDateMillis = it }
+                    facilityDatePickerState.selectedDateMillis?.let { facilityDateMillis = normalizePickerMillis(it) }
                     showFacilityDatePicker = false
                 }) {
                     Text("OK")

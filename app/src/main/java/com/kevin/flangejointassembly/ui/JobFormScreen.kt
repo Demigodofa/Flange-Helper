@@ -60,7 +60,7 @@ fun JobFormScreen(
                 TextButton(onClick = {
                     val selected = datePickerState.selectedDateMillis
                     if (selected != null) {
-                        dateMillis = selected
+                        dateMillis = normalizePickerMillis(selected)
                     }
                     showDatePicker = false
                 }) {

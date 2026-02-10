@@ -18,3 +18,10 @@ fun formatDate(millis: Long): String {
         .toLocalDate()
     return date.format(dateFormatter)
 }
+
+fun normalizePickerMillis(selectedUtcMillis: Long): Long {
+    val utcDate = Instant.ofEpochMilli(selectedUtcMillis)
+        .atZone(ZoneId.of("UTC"))
+        .toLocalDate()
+    return utcDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+}
