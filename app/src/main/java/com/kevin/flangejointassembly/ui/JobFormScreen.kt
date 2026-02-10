@@ -30,8 +30,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kevin.flangejointassembly.ui.components.FlangeHeader
@@ -104,14 +102,10 @@ fun JobFormScreen(
         OutlinedTextField(
             value = jobNumber,
             onValueChange = { input ->
-                jobNumber = input.take(10)
+                jobNumber = input.uppercase().take(10)
             },
             singleLine = true,
             placeholder = { Text("Up to 10 characters") },
-            keyboardOptions = KeyboardOptions(
-                capitalization = KeyboardCapitalization.Characters,
-                autoCorrect = false
-            ),
             modifier = Modifier.fillMaxWidth()
         )
 
