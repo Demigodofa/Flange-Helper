@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+
 android {
     namespace = "com.kevin.flangejointassembly"
     compileSdk {
@@ -34,6 +36,14 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+}
+
+extensions.getByType<ApplicationAndroidComponentsExtension>().apply {
+    onVariants { variant ->
+        variant.outputs.forEach { output ->
+            output.outputFileName.set("FlangeHelper-${variant.name}.apk")
+        }
     }
 }
 
