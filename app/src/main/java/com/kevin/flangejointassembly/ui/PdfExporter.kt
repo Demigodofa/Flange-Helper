@@ -61,30 +61,40 @@ fun exportJobToPdf(context: Context, job: JobItem): Uri? {
             strokeWidth = 1f
         }
 
-        var y = MARGIN + 18
-        canvas.drawText("FLANGE TORQUE REPORT", MARGIN.toFloat(), y.toFloat(), titlePaint)
-        y += 18
+        var y = MARGIN + 22
+        val titleText = "FLANGE TORQUE REPORT"
+        val titleWidth = titlePaint.measureText(titleText)
+        val titleX = ((PAGE_WIDTH - titleWidth) / 2f).coerceAtLeast(MARGIN.toFloat())
+        canvas.drawText(titleText, titleX, y.toFloat(), titlePaint)
+        canvas.drawLine(titleX, y + 4f, titleX + titleWidth, y + 4f, linePaint)
+        y += 26
         canvas.drawText("Job: ${job.number}", MARGIN.toFloat(), y.toFloat(), labelPaint)
         canvas.drawText("Location: ${job.location}", (MARGIN + 200).toFloat(), y.toFloat(), labelPaint)
         canvas.drawText("Date: ${formatDate(job.dateMillis)}", (MARGIN + 420).toFloat(), y.toFloat(), labelPaint)
-        y += 20
+        y += 26
 
         val leftX = MARGIN
         val rightX = PAGE_WIDTH / 2 + 10
         val columnGap = 12
         val columnWidth = PAGE_WIDTH / 2 - MARGIN - columnGap
+        val valueOffset = 130
+        val valueWidth = columnWidth - valueOffset
+        val rightValueOffset = 150
+        val rightValueWidth = PAGE_WIDTH - rightX - MARGIN - rightValueOffset
 
         fun drawField(x: Int, label: String, value: String, width: Int): Int {
             canvas.drawText(label, x.toFloat(), y.toFloat(), labelPaint)
             val text = if (value.isBlank()) "-" else value
-            canvas.drawText(text, (x + 130).toFloat(), y.toFloat(), valuePaint)
+            val fitted = fitText(text, valuePaint, width)
+            canvas.drawText(fitted, (x + valueOffset).toFloat(), y.toFloat(), valuePaint)
             return 14
         }
 
         fun drawFieldRight(label: String, value: String): Int {
             canvas.drawText(label, rightX.toFloat(), y.toFloat(), labelPaint)
             val text = if (value.isBlank()) "-" else value
-            canvas.drawText(text, (rightX + 150).toFloat(), y.toFloat(), valuePaint)
+            val fitted = fitText(text, valuePaint, rightValueWidth)
+            canvas.drawText(fitted, (rightX + rightValueOffset).toFloat(), y.toFloat(), valuePaint)
             return 14
         }
 
@@ -118,9 +128,8 @@ fun exportJobToPdf(context: Context, job: JobItem): Uri? {
             "Torque Wet" to if (form.torqueWet) "Yes" else "",
             "Lube" to form.lubricantType,
             "Work Temp" to form.workingTempF,
-            "Rounded Temp" to form.roundedTempF,
             "Torque Method" to form.torqueMethod,
-            "Target F" to form.targetBoltLoadF,
+            "Target Bolt Load F" to form.targetBoltLoadF,
             "Yield %" to form.pctYieldTarget,
             "TPI" to form.tpiUsed,
             "As" to form.asUsed,
@@ -128,12 +137,13 @@ fun exportJobToPdf(context: Context, job: JobItem): Uri? {
             "K Used" to form.kUsed,
             "Calc Torque" to form.calculatedTargetTorque,
             "Specified" to form.specifiedTargetTorque,
-            "Pass1" to if (form.pass1Confirmed) "Yes ${form.pass1Initials}" else form.pass1Initials,
-            "Pass2" to if (form.pass2Confirmed) "Yes ${form.pass2Initials}" else form.pass2Initials,
-            "Pass3" to if (form.pass3Confirmed) "Yes ${form.pass3Initials}" else form.pass3Initials,
-            "Pass4" to if (form.pass4Confirmed) "Yes ${form.pass4Initials}" else form.pass4Initials
+            "Pass1" to formatPassLine(form, 1),
+            "Pass2" to formatPassLine(form, 2),
+            "Pass3" to formatPassLine(form, 3),
+            "Pass4" to formatPassLine(form, 4)
         )
 
+        val dataTop = y - 6
         val rows = max(leftFields.size, rightFields.size)
         for (i in 0 until rows) {
             if (i < leftFields.size) {
@@ -143,24 +153,52 @@ fun exportJobToPdf(context: Context, job: JobItem): Uri? {
                 drawFieldRight(rightFields[i].first, rightFields[i].second)
             }
         }
+        val dataBottom = y + 4
+        val leftBox = Rect(leftX - 6, dataTop, leftX + columnWidth + 6, dataBottom)
+        val rightBox = Rect(rightX - 6, dataTop, PAGE_WIDTH - MARGIN + 6, dataBottom)
+        canvas.drawRect(leftBox, linePaint)
+        canvas.drawRect(rightBox, linePaint)
 
-        y += 10
-        canvas.drawText("Contractor Representative", leftX.toFloat(), y.toFloat(), headerPaint)
-        y += 14
-        drawSignatureBlock(canvas, leftX, y, "Print", form.contractorPrintName, linePaint, valuePaint)
-        y += 18
-        drawSignatureLine(context, canvas, leftX, y, "Sign", form.contractorSignUri, linePaint)
-        y += 18
-        drawSignatureBlock(canvas, leftX, y, "Date", if (form.contractorDateMillis > 0) formatDate(form.contractorDateMillis) else "", linePaint, valuePaint)
+        y += 12
+        y = drawSignatureSection(
+            context = context,
+            canvas = canvas,
+            x = leftX,
+            y = y,
+            header = "Contractor Representative",
+            printName = form.contractorPrintName,
+            signUri = form.contractorSignUri,
+            dateMillis = form.contractorDateMillis,
+            headerPaint = headerPaint,
+            labelPaint = labelPaint,
+            valuePaint = valuePaint,
+            linePaint = linePaint
+        )
 
-        y += 24
-        canvas.drawText("Facility Representative", leftX.toFloat(), y.toFloat(), headerPaint)
-        y += 14
-        drawSignatureBlock(canvas, leftX, y, "Print", form.facilityPrintName, linePaint, valuePaint)
+        y += 16
+        y = drawSignatureSection(
+            context = context,
+            canvas = canvas,
+            x = leftX,
+            y = y,
+            header = "Facility Representative",
+            printName = form.facilityPrintName,
+            signUri = form.facilitySignUri,
+            dateMillis = form.facilityDateMillis,
+            headerPaint = headerPaint,
+            labelPaint = labelPaint,
+            valuePaint = valuePaint,
+            linePaint = linePaint
+        )
+
         y += 18
-        drawSignatureLine(context, canvas, leftX, y, "Sign", form.facilitySignUri, linePaint)
-        y += 18
-        drawSignatureBlock(canvas, leftX, y, "Date", if (form.facilityDateMillis > 0) formatDate(form.facilityDateMillis) else "", linePaint, valuePaint)
+        val boltCount = form.boltHoles.toIntOrNull()
+        if (boltCount != null) {
+            val boltNote = "Starting at the 12 o'clock position and moving clockwise, " +
+                "the bolt holes were marked 1, 2, 3, 4 ... $boltCount. " +
+                "Tightening order: 1, 2, 3, 4 ..."
+            canvas.drawText(fitText(boltNote, labelPaint, PAGE_WIDTH - 2 * MARGIN), leftX.toFloat(), y.toFloat(), labelPaint)
+        }
 
         document.finishPage(page)
 
@@ -242,33 +280,6 @@ private fun drawSignatureBlock(
     }
 }
 
-private fun drawSignatureLine(
-    context: Context,
-    canvas: android.graphics.Canvas,
-    x: Int,
-    y: Int,
-    label: String,
-    signatureUri: String,
-    linePaint: Paint
-) {
-    val labelPaint = Paint().apply {
-        color = Color.BLACK
-        textSize = 10f
-    }
-    canvas.drawText("$label:", x.toFloat(), y.toFloat(), labelPaint)
-    if (signatureUri.isBlank()) {
-        canvas.drawLine((x + 40).toFloat(), (y + 2).toFloat(), (x + 220).toFloat(), (y + 2).toFloat(), linePaint)
-    } else {
-        val bitmap = loadBitmap(context, signatureUri)
-        if (bitmap != null) {
-            val scaled = scaleBitmapToFit(bitmap, 180, 40)
-            canvas.drawBitmap(scaled, (x + 40).toFloat(), (y - 30).toFloat(), null)
-        } else {
-            canvas.drawLine((x + 40).toFloat(), (y + 2).toFloat(), (x + 220).toFloat(), (y + 2).toFloat(), linePaint)
-        }
-    }
-}
-
 private fun loadBitmap(context: Context, uriString: String): Bitmap? {
     return runCatching {
         val uri = Uri.parse(uriString)
@@ -276,6 +287,111 @@ private fun loadBitmap(context: Context, uriString: String): Bitmap? {
             BitmapFactory.decodeStream(stream)
         }
     }.getOrNull()
+}
+
+private fun drawSignatureSection(
+    context: Context,
+    canvas: android.graphics.Canvas,
+    x: Int,
+    y: Int,
+    header: String,
+    printName: String,
+    signUri: String,
+    dateMillis: Long,
+    headerPaint: Paint,
+    labelPaint: Paint,
+    valuePaint: Paint,
+    linePaint: Paint
+): Int {
+    var currentY = y
+    canvas.drawText(header, x.toFloat(), currentY.toFloat(), headerPaint)
+    currentY += 14
+
+    drawSignatureBlock(canvas, x, currentY, "Print", printName, linePaint, valuePaint)
+    currentY += 18
+
+    currentY = drawSignatureBox(context, canvas, x, currentY, "Sign", signUri, linePaint, labelPaint)
+    currentY += 8
+
+    val dateText = if (dateMillis > 0) formatDate(dateMillis) else ""
+    drawSignatureBlock(canvas, x, currentY, "Date", dateText, linePaint, valuePaint)
+    currentY += 18
+
+    return currentY
+}
+
+private fun drawSignatureBox(
+    context: Context,
+    canvas: android.graphics.Canvas,
+    x: Int,
+    y: Int,
+    label: String,
+    signatureUri: String,
+    linePaint: Paint,
+    labelPaint: Paint
+): Int {
+    val boxLeft = x + 40
+    val boxTop = y - 12
+    val boxWidth = 220
+    val boxHeight = 50
+    canvas.drawText("$label:", x.toFloat(), y.toFloat(), labelPaint)
+    canvas.drawRect(
+        Rect(boxLeft, boxTop, boxLeft + boxWidth, boxTop + boxHeight),
+        linePaint
+    )
+    if (signatureUri.isNotBlank()) {
+        val bitmap = loadBitmap(context, signatureUri)
+        if (bitmap != null) {
+            val scaled = scaleBitmapToFit(bitmap, boxWidth - 6, boxHeight - 6)
+            val left = boxLeft + (boxWidth - scaled.width) / 2
+            val top = boxTop + (boxHeight - scaled.height) / 2
+            canvas.drawBitmap(scaled, left.toFloat(), top.toFloat(), null)
+        }
+    }
+    return y + boxHeight
+}
+
+private fun fitText(text: String, paint: Paint, maxWidth: Int): String {
+    if (paint.measureText(text) <= maxWidth) return text
+    val ellipsis = "..."
+    var end = text.length
+    while (end > 0) {
+        val candidate = text.substring(0, end).trimEnd() + ellipsis
+        if (paint.measureText(candidate) <= maxWidth) return candidate
+        end -= 1
+    }
+    return text.take(1) + ellipsis
+}
+
+private fun formatPassLine(form: FlangeFormItem, pass: Int): String {
+    val target = form.specifiedTargetTorque.toDoubleOrNull()
+        ?: form.calculatedTargetTorque.toDoubleOrNull()
+        ?: return when (pass) {
+            1 -> form.pass1Initials
+            2 -> form.pass2Initials
+            3 -> form.pass3Initials
+            else -> form.pass4Initials
+        }
+    val (lowPct, highPct) = when (pass) {
+        1 -> 0.20 to 0.30
+        2 -> 0.50 to 0.70
+        3 -> 1.0 to 1.0
+        else -> 1.0 to 1.0
+    }
+    val low = target * lowPct
+    val high = target * highPct
+    val range = if (pass <= 2) {
+        String.format("%.0f-%.0f ft-lb", low, high)
+    } else {
+        String.format("%.0f ft-lb", high)
+    }
+    val initials = when (pass) {
+        1 -> form.pass1Initials
+        2 -> form.pass2Initials
+        3 -> form.pass3Initials
+        else -> form.pass4Initials
+    }
+    return if (initials.isBlank()) range else "$range ($initials)"
 }
 
 private fun scaleBitmapToFit(bitmap: Bitmap, maxWidth: Int, maxHeight: Int): Bitmap {

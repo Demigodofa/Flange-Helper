@@ -150,14 +150,14 @@ fun FlangeFormScreen(
     var showFacilityDatePicker by remember { mutableStateOf(false) }
     var showSignatureDialog by remember { mutableStateOf(false) }
     var signatureTarget by remember { mutableStateOf(SignatureTarget.Contractor) }
-    var pass1Confirmed by remember { mutableStateOf(false) }
-    var pass1Initials by remember { mutableStateOf("") }
-    var pass2Confirmed by remember { mutableStateOf(false) }
-    var pass2Initials by remember { mutableStateOf("") }
-    var pass3Confirmed by remember { mutableStateOf(false) }
-    var pass3Initials by remember { mutableStateOf("") }
-    var pass4Confirmed by remember { mutableStateOf(false) }
-    var pass4Initials by remember { mutableStateOf("") }
+    var pass1Confirmed by remember { mutableStateOf(initial?.pass1Confirmed ?: false) }
+    var pass1Initials by remember { mutableStateOf(initial?.pass1Initials.orEmpty()) }
+    var pass2Confirmed by remember { mutableStateOf(initial?.pass2Confirmed ?: false) }
+    var pass2Initials by remember { mutableStateOf(initial?.pass2Initials.orEmpty()) }
+    var pass3Confirmed by remember { mutableStateOf(initial?.pass3Confirmed ?: false) }
+    var pass3Initials by remember { mutableStateOf(initial?.pass3Initials.orEmpty()) }
+    var pass4Confirmed by remember { mutableStateOf(initial?.pass4Confirmed ?: false) }
+    var pass4Initials by remember { mutableStateOf(initial?.pass4Initials.orEmpty()) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showWrenchCalPicker by remember { mutableStateOf(false) }
 
@@ -852,22 +852,13 @@ fun FlangeFormScreen(
             } else {
                 "clockwise"
             }
-            LabeledField(label = "Tightening Order (Report)") {
-                if (boltSequence.isEmpty()) {
-                    Text(
-                        text = "Sequence not available for this bolt count.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = FlangeColors.TextSecondary
-                    )
-                } else {
-                    SequenceBox(
-                        text = buildReportLine(
-                            boltCount = boltHoleCount,
-                            directionWord = directionWord,
-                            sequence = boltSequence
-                        )
-                    )
-                }
+            LabeledField(label = "Bolt Marking / Tightening") {
+                val text = buildReportLine(
+                    boltCount = boltHoleCount,
+                    directionWord = directionWord,
+                    sequence = boltSequence
+                )
+                SequenceBox(text = text)
             }
         }
 
@@ -1017,14 +1008,6 @@ fun FlangeFormScreen(
                 placeholder = "Select temperature",
                 onValueChange = { workingTempF = it }
             )
-            if (usedTempF.isNotBlank()) {
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = "Rounded to: $usedTempF F",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = FlangeColors.TextSecondary
-                )
-            }
         }
 
         if (requiresSpecifiedTorque) {
@@ -1464,7 +1447,7 @@ fun FlangeFormScreen(
                 )
             )
         }
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(80.dp))
     }
 }
 
@@ -1815,14 +1798,15 @@ private fun SignatureDialog(
 }
 
 private fun renderSignatureBitmap(strokes: List<List<Offset>>, size: IntSize): android.graphics.Bitmap {
-    val width = size.width.coerceAtLeast(1)
-    val height = size.height.coerceAtLeast(1)
+    val scale = 2
+    val width = (size.width.coerceAtLeast(1)) * scale
+    val height = (size.height.coerceAtLeast(1)) * scale
     val bitmap = android.graphics.Bitmap.createBitmap(width, height, android.graphics.Bitmap.Config.ARGB_8888)
     val canvas = android.graphics.Canvas(bitmap)
     canvas.drawColor(android.graphics.Color.WHITE)
     val paint = android.graphics.Paint().apply {
         color = android.graphics.Color.BLACK
-        strokeWidth = 6f
+        strokeWidth = 10f
         style = android.graphics.Paint.Style.STROKE
         strokeJoin = android.graphics.Paint.Join.ROUND
         strokeCap = android.graphics.Paint.Cap.ROUND
@@ -1832,7 +1816,7 @@ private fun renderSignatureBitmap(strokes: List<List<Offset>>, size: IntSize): a
         for (i in 0 until stroke.size - 1) {
             val start = stroke[i]
             val end = stroke[i + 1]
-            canvas.drawLine(start.x, start.y, end.x, end.y, paint)
+            canvas.drawLine(start.x * scale, start.y * scale, end.x * scale, end.y * scale, paint)
         }
     }
     return bitmap
@@ -1848,9 +1832,14 @@ private fun buildReportLine(
     directionWord: String,
     sequence: List<Int>
 ): String {
-    val sequenceText = sequence.joinToString(", ")
-    return "$boltCount bolt holes, numbered from 12 o'clock going $directionWord.\n" +
-        "Tightening order: $sequenceText"
+    val tightenPreview = if (sequence.isNotEmpty()) {
+        sequence.take(4).joinToString(", ")
+    } else {
+        "1, 2, 3, 4"
+    }
+    return "$boltCount bolt holes starting from approx. 12 o'clock going $directionWord, " +
+        "mark each bolt in this order: 1, 2, 3, 4 ... $boltCount.\n" +
+        "Tightening order: $tightenPreview ..."
 }
 
 private fun generateBoltSequence(boltCount: Int): List<Int> {
