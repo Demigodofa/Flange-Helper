@@ -50,6 +50,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.IntSize
@@ -63,6 +66,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.core.content.FileProvider
 import kotlin.math.roundToInt
 import java.io.File
+import java.io.FileOutputStream
 import android.graphics.BitmapFactory
 import android.net.Uri
 
@@ -80,6 +84,7 @@ fun FlangeFormScreen(
     jobId: String,
     jobNumber: String,
     jobDateMillis: Long,
+    initialForm: FlangeFormItem? = null,
     onSave: (FlangeFormItem) -> Unit,
     onBack: () -> Unit
 ) {
@@ -92,39 +97,40 @@ fun FlangeFormScreen(
         referenceData = ReferenceData.load(context)
     }
 
-    var dateMillis by remember { mutableLongStateOf(jobDateMillis) }
-    var description by remember { mutableStateOf("") }
-    var serviceType by remember { mutableStateOf("") }
-    var gasketType by remember { mutableStateOf("") }
-    var wrenchSerials by remember { mutableStateOf("") }
-    var wrenchCalDateMillis by remember { mutableLongStateOf(0L) }
-    var torqueDry by remember { mutableStateOf(true) }
-    var torqueWet by remember { mutableStateOf(false) }
-    var lubricantType by remember { mutableStateOf("") }
-    var flangeClass by remember { mutableStateOf("") }
-    var pipeSize by remember { mutableStateOf("") }
-    var customId by remember { mutableStateOf("") }
-    var customOd by remember { mutableStateOf("") }
-    var customThickness by remember { mutableStateOf("") }
-    var flangeFace by remember { mutableStateOf("") }
-    var boltHoles by remember { mutableStateOf("") }
-    var flangeFaceCondition by remember { mutableStateOf("") }
-    var flangeParallel by remember { mutableStateOf("") }
-    var fastenerType by remember { mutableStateOf("") }
-    var fastenerSpec by remember { mutableStateOf("") }
-    var fastenerClass by remember { mutableStateOf("") }
-    var fastenerLength by remember { mutableStateOf("") }
-    var fastenerDiameter by remember { mutableStateOf("") }
-    var threadSeries by remember { mutableStateOf("") }
-    var nutSpec by remember { mutableStateOf("") }
-    var torqueMethod by remember { mutableStateOf("YIELD_PERCENT") }
-    var targetBoltLoadF by remember { mutableStateOf("") }
-    var pctYieldTarget by remember { mutableStateOf("0.50") }
+    val initial = initialForm
+    var dateMillis by remember { mutableLongStateOf(initial?.dateMillis ?: jobDateMillis) }
+    var description by remember { mutableStateOf(initial?.description.orEmpty()) }
+    var serviceType by remember { mutableStateOf(initial?.serviceType.orEmpty()) }
+    var gasketType by remember { mutableStateOf(initial?.gasketType.orEmpty()) }
+    var wrenchSerials by remember { mutableStateOf(initial?.wrenchSerials.orEmpty()) }
+    var wrenchCalDateMillis by remember { mutableLongStateOf(initial?.wrenchCalDateMillis ?: 0L) }
+    var torqueDry by remember { mutableStateOf(initial?.torqueDry ?: true) }
+    var torqueWet by remember { mutableStateOf(initial?.torqueWet ?: false) }
+    var lubricantType by remember { mutableStateOf(initial?.lubricantType.orEmpty()) }
+    var flangeClass by remember { mutableStateOf(initial?.flangeClass.orEmpty()) }
+    var pipeSize by remember { mutableStateOf(initial?.pipeSize.orEmpty()) }
+    var customId by remember { mutableStateOf(initial?.customInnerDiameter.orEmpty()) }
+    var customOd by remember { mutableStateOf(initial?.customOuterDiameter.orEmpty()) }
+    var customThickness by remember { mutableStateOf(initial?.customThickness.orEmpty()) }
+    var flangeFace by remember { mutableStateOf(initial?.flangeFace.orEmpty()) }
+    var boltHoles by remember { mutableStateOf(initial?.boltHoles.orEmpty()) }
+    var flangeFaceCondition by remember { mutableStateOf(initial?.flangeFaceCondition.orEmpty()) }
+    var flangeParallel by remember { mutableStateOf(initial?.flangeParallel.orEmpty()) }
+    var fastenerType by remember { mutableStateOf(initial?.fastenerType.orEmpty()) }
+    var fastenerSpec by remember { mutableStateOf(initial?.fastenerSpec.orEmpty()) }
+    var fastenerClass by remember { mutableStateOf(initial?.fastenerClass.orEmpty()) }
+    var fastenerLength by remember { mutableStateOf(initial?.fastenerLength.orEmpty()) }
+    var fastenerDiameter by remember { mutableStateOf(initial?.fastenerDiameter.orEmpty()) }
+    var threadSeries by remember { mutableStateOf(initial?.threadSeries.orEmpty()) }
+    var nutSpec by remember { mutableStateOf(initial?.nutSpec.orEmpty()) }
+    var torqueMethod by remember { mutableStateOf(initial?.torqueMethod ?: "YIELD_PERCENT") }
+    var targetBoltLoadF by remember { mutableStateOf(initial?.targetBoltLoadF.orEmpty()) }
+    var pctYieldTarget by remember { mutableStateOf(initial?.pctYieldTarget ?: "0.50") }
     var pctYieldEdited by remember { mutableStateOf(false) }
-    var workingTempF by remember { mutableStateOf("") }
-    var usedTempF by remember { mutableStateOf("") }
-    var calculatedTargetTorque by remember { mutableStateOf("") }
-    var specifiedTargetTorque by remember { mutableStateOf("") }
+    var workingTempF by remember { mutableStateOf(initial?.workingTempF.orEmpty()) }
+    var usedTempF by remember { mutableStateOf(initial?.roundedTempF.orEmpty()) }
+    var calculatedTargetTorque by remember { mutableStateOf(initial?.calculatedTargetTorque.orEmpty()) }
+    var specifiedTargetTorque by remember { mutableStateOf(initial?.specifiedTargetTorque.orEmpty()) }
     var calculatedEdited by remember { mutableStateOf(false) }
     var useCustomTorque by remember { mutableStateOf(false) }
     val photoUris = remember { mutableStateListOf<String>() }
@@ -134,6 +140,16 @@ fun FlangeFormScreen(
     var showMaxPhotosDialog by remember { mutableStateOf(false) }
     var showDeletePhotoDialog by remember { mutableStateOf(false) }
     var deletePhotoIndex by remember { mutableStateOf(-1) }
+    var contractorPrintName by remember { mutableStateOf(initial?.contractorPrintName.orEmpty()) }
+    var contractorSignUri by remember { mutableStateOf(initial?.contractorSignUri.orEmpty()) }
+    var contractorDateMillis by remember { mutableLongStateOf(initial?.contractorDateMillis ?: 0L) }
+    var facilityPrintName by remember { mutableStateOf(initial?.facilityPrintName.orEmpty()) }
+    var facilitySignUri by remember { mutableStateOf(initial?.facilitySignUri.orEmpty()) }
+    var facilityDateMillis by remember { mutableLongStateOf(initial?.facilityDateMillis ?: 0L) }
+    var showContractorDatePicker by remember { mutableStateOf(false) }
+    var showFacilityDatePicker by remember { mutableStateOf(false) }
+    var showSignatureDialog by remember { mutableStateOf(false) }
+    var signatureTarget by remember { mutableStateOf(SignatureTarget.Contractor) }
     var pass1Confirmed by remember { mutableStateOf(false) }
     var pass1Initials by remember { mutableStateOf("") }
     var pass2Confirmed by remember { mutableStateOf(false) }
@@ -149,6 +165,18 @@ fun FlangeFormScreen(
     val wrenchCalPickerState = rememberDatePickerState(
         initialSelectedDateMillis = if (wrenchCalDateMillis > 0) wrenchCalDateMillis else null
     )
+    val contractorDatePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = if (contractorDateMillis > 0) contractorDateMillis else null
+    )
+    val facilityDatePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = if (facilityDateMillis > 0) facilityDateMillis else null
+    )
+
+    LaunchedEffect(initial?.id) {
+        photoUris.clear()
+        photoUris.addAll(initial?.photoUris.orEmpty())
+        useCustomTorque = initial?.specifiedTargetTorque?.isNotBlank() == true
+    }
 
     if (showDatePicker) {
         DatePickerDialog(
@@ -189,6 +217,48 @@ fun FlangeFormScreen(
             }
         ) {
             DatePicker(state = wrenchCalPickerState)
+        }
+    }
+
+    if (showContractorDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showContractorDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    contractorDatePickerState.selectedDateMillis?.let { contractorDateMillis = it }
+                    showContractorDatePicker = false
+                }) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showContractorDatePicker = false }) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DatePicker(state = contractorDatePickerState)
+        }
+    }
+
+    if (showFacilityDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showFacilityDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    facilityDatePickerState.selectedDateMillis?.let { facilityDateMillis = it }
+                    showFacilityDatePicker = false
+                }) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showFacilityDatePicker = false }) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DatePicker(state = facilityDatePickerState)
         }
     }
 
@@ -239,6 +309,26 @@ fun FlangeFormScreen(
                     Text("No")
                 }
             }
+        )
+    }
+
+    if (showSignatureDialog) {
+        SignatureDialog(
+            title = if (signatureTarget == SignatureTarget.Contractor) {
+                "Contractor Signature"
+            } else {
+                "Facility Signature"
+            },
+            onSave = { bitmap ->
+                val uriString = saveSignatureBitmap(context, bitmap)
+                if (signatureTarget == SignatureTarget.Contractor) {
+                    contractorSignUri = uriString
+                } else {
+                    facilitySignUri = uriString
+                }
+                showSignatureDialog = false
+            },
+            onDismiss = { showSignatureDialog = false }
         )
     }
 
@@ -1166,6 +1256,136 @@ fun FlangeFormScreen(
         }
 
         Spacer(modifier = Modifier.height(20.dp))
+        Text(
+            text = "Contractor Representative",
+            style = MaterialTheme.typography.titleMedium,
+            color = FlangeColors.TextPrimary
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedTextField(
+            value = contractorPrintName,
+            onValueChange = { contractorPrintName = it },
+            singleLine = true,
+            label = { Text("Print") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Button(
+                onClick = {
+                    signatureTarget = SignatureTarget.Contractor
+                    showSignatureDialog = true
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = FlangeColors.PrimaryButton,
+                    contentColor = FlangeColors.PrimaryButtonText
+                ),
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Text("Sign")
+            }
+            if (contractorSignUri.isNotBlank()) {
+                SignaturePreview(uriString = contractorSignUri)
+                TextButton(onClick = { contractorSignUri = "" }) {
+                    Text("Clear")
+                }
+            } else {
+                Text(
+                    text = "Signature line",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = FlangeColors.TextMuted
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedTextField(
+            value = if (contractorDateMillis > 0) formatDate(contractorDateMillis) else "",
+            onValueChange = {},
+            readOnly = true,
+            singleLine = true,
+            label = { Text("Date") },
+            trailingIcon = {
+                androidx.compose.material3.Icon(
+                    imageVector = Icons.Filled.DateRange,
+                    contentDescription = "Select date",
+                    modifier = Modifier.clickable { showContractorDatePicker = true }
+                )
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { showContractorDatePicker = true }
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+        Text(
+            text = "Facility Representative",
+            style = MaterialTheme.typography.titleMedium,
+            color = FlangeColors.TextPrimary
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedTextField(
+            value = facilityPrintName,
+            onValueChange = { facilityPrintName = it },
+            singleLine = true,
+            label = { Text("Print") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Button(
+                onClick = {
+                    signatureTarget = SignatureTarget.Facility
+                    showSignatureDialog = true
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = FlangeColors.PrimaryButton,
+                    contentColor = FlangeColors.PrimaryButtonText
+                ),
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Text("Sign")
+            }
+            if (facilitySignUri.isNotBlank()) {
+                SignaturePreview(uriString = facilitySignUri)
+                TextButton(onClick = { facilitySignUri = "" }) {
+                    Text("Clear")
+                }
+            } else {
+                Text(
+                    text = "Signature line",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = FlangeColors.TextMuted
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedTextField(
+            value = if (facilityDateMillis > 0) formatDate(facilityDateMillis) else "",
+            onValueChange = {},
+            readOnly = true,
+            singleLine = true,
+            label = { Text("Date") },
+            trailingIcon = {
+                androidx.compose.material3.Icon(
+                    imageVector = Icons.Filled.DateRange,
+                    contentDescription = "Select date",
+                    modifier = Modifier.clickable { showFacilityDatePicker = true }
+                )
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { showFacilityDatePicker = true }
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
         Button(
             onClick = {
                 onSave(
@@ -1216,7 +1436,13 @@ fun FlangeFormScreen(
                         pass3Initials = pass3Initials.trim(),
                         pass4Confirmed = pass4Confirmed,
                         pass4Initials = pass4Initials.trim(),
-                        photoUris = photoUris.toList()
+                        photoUris = photoUris.toList(),
+                        contractorPrintName = contractorPrintName.trim(),
+                        contractorSignUri = contractorSignUri,
+                        contractorDateMillis = contractorDateMillis,
+                        facilityPrintName = facilityPrintName.trim(),
+                        facilitySignUri = facilitySignUri,
+                        facilityDateMillis = facilityDateMillis
                     )
                 )
             },
@@ -1382,11 +1608,7 @@ private fun PhotoPreview(uri: Uri) {
     var bitmap by remember(uri) { mutableStateOf<android.graphics.Bitmap?>(null) }
 
     LaunchedEffect(uri) {
-        runCatching {
-            context.contentResolver.openInputStream(uri)?.use { stream ->
-                bitmap = BitmapFactory.decodeStream(stream)
-            }
-        }
+        bitmap = loadBitmapFromUri(context, uri.toString())
     }
 
     if (bitmap != null) {
@@ -1416,11 +1638,7 @@ private fun PhotoThumbnail(
     var bitmap by remember(uriString) { mutableStateOf<android.graphics.Bitmap?>(null) }
 
     LaunchedEffect(uriString) {
-        runCatching {
-            context.contentResolver.openInputStream(uri)?.use { stream ->
-                bitmap = BitmapFactory.decodeStream(stream)
-            }
-        }
+        bitmap = loadBitmapFromUri(context, uri.toString())
     }
 
     Box(
@@ -1453,6 +1671,177 @@ private fun PhotoThumbnail(
             )
         }
     }
+}
+
+@Composable
+private fun SignaturePreview(uriString: String) {
+    val context = LocalContext.current
+    var bitmap by remember(uriString) { mutableStateOf<android.graphics.Bitmap?>(null) }
+
+    LaunchedEffect(uriString) {
+        bitmap = loadBitmapFromUri(context, uriString)
+    }
+
+    Box(
+        modifier = Modifier
+            .width(140.dp)
+            .height(60.dp)
+            .border(1.dp, FlangeColors.Divider, RoundedCornerShape(10.dp))
+            .background(Color.White, RoundedCornerShape(10.dp))
+    ) {
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap!!.asImageBitmap(),
+                contentDescription = "Signature",
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            Text(
+                text = "Signed",
+                style = MaterialTheme.typography.bodySmall,
+                color = FlangeColors.TextSecondary,
+                modifier = Modifier.align(Alignment.Center)
+            )
+        }
+    }
+}
+
+private fun loadBitmapFromUri(context: android.content.Context, uriString: String): android.graphics.Bitmap? {
+    return runCatching {
+        val uri = Uri.parse(uriString)
+        context.contentResolver.openInputStream(uri)?.use { stream ->
+            BitmapFactory.decodeStream(stream)
+        }
+    }.getOrNull()
+}
+
+private fun saveSignatureBitmap(context: android.content.Context, bitmap: android.graphics.Bitmap): String {
+    val dir = File(context.filesDir, "flange_helper/signatures")
+    if (!dir.exists()) {
+        dir.mkdirs()
+    }
+    val file = File(dir, "sign_${System.currentTimeMillis()}.png")
+    FileOutputStream(file).use { output ->
+        bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, output)
+    }
+    val uri = FileProvider.getUriForFile(
+        context,
+        "${context.packageName}.fileprovider",
+        file
+    )
+    return uri.toString()
+}
+
+@Composable
+private fun SignatureDialog(
+    title: String,
+    onSave: (android.graphics.Bitmap) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var strokes by remember { mutableStateOf(listOf<List<Offset>>()) }
+    var currentStroke by remember { mutableStateOf(listOf<Offset>()) }
+    var canvasSize by remember { mutableStateOf(IntSize.Zero) }
+
+    AlertDialog(
+        onDismissRequest = { },
+        title = { Text(title) },
+        text = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(220.dp)
+                    .border(1.dp, FlangeColors.Divider, RoundedCornerShape(10.dp))
+                    .background(Color.White, RoundedCornerShape(10.dp))
+                    .onGloballyPositioned { canvasSize = it.size }
+                    .pointerInput(Unit) {
+                        detectDragGestures(
+                            onDragStart = { offset ->
+                                currentStroke = listOf(offset)
+                            },
+                            onDrag = { change, _ ->
+                                change.consume()
+                                currentStroke = currentStroke + change.position
+                            },
+                            onDragEnd = {
+                                if (currentStroke.isNotEmpty()) {
+                                    strokes = strokes + listOf(currentStroke)
+                                    currentStroke = emptyList()
+                                }
+                            }
+                        )
+                    }
+            ) {
+                androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+                    val allStrokes = if (currentStroke.isNotEmpty()) strokes + listOf(currentStroke) else strokes
+                    allStrokes.forEach { stroke ->
+                        for (i in 0 until stroke.size - 1) {
+                            drawLine(
+                                color = Color.Black,
+                                start = stroke[i],
+                                end = stroke[i + 1],
+                                strokeWidth = 4f,
+                                cap = androidx.compose.ui.graphics.StrokeCap.Round
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val finalized = if (currentStroke.isNotEmpty()) strokes + listOf(currentStroke) else strokes
+                    if (finalized.isEmpty()) return@TextButton
+                    val bitmap = renderSignatureBitmap(finalized, canvasSize)
+                    onSave(bitmap)
+                }
+            ) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                TextButton(onClick = {
+                    strokes = emptyList()
+                    currentStroke = emptyList()
+                }) {
+                    Text("Clear")
+                }
+                TextButton(onClick = onDismiss) {
+                    Text("Cancel")
+                }
+            }
+        }
+    )
+}
+
+private fun renderSignatureBitmap(strokes: List<List<Offset>>, size: IntSize): android.graphics.Bitmap {
+    val width = size.width.coerceAtLeast(1)
+    val height = size.height.coerceAtLeast(1)
+    val bitmap = android.graphics.Bitmap.createBitmap(width, height, android.graphics.Bitmap.Config.ARGB_8888)
+    val canvas = android.graphics.Canvas(bitmap)
+    canvas.drawColor(android.graphics.Color.WHITE)
+    val paint = android.graphics.Paint().apply {
+        color = android.graphics.Color.BLACK
+        strokeWidth = 6f
+        style = android.graphics.Paint.Style.STROKE
+        strokeJoin = android.graphics.Paint.Join.ROUND
+        strokeCap = android.graphics.Paint.Cap.ROUND
+        isAntiAlias = true
+    }
+    strokes.forEach { stroke ->
+        for (i in 0 until stroke.size - 1) {
+            val start = stroke[i]
+            val end = stroke[i + 1]
+            canvas.drawLine(start.x, start.y, end.x, end.y, paint)
+        }
+    }
+    return bitmap
+}
+
+private enum class SignatureTarget {
+    Contractor,
+    Facility
 }
 
 private fun buildReportLine(

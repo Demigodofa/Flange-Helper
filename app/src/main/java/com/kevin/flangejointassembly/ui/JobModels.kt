@@ -55,5 +55,11 @@ data class FlangeFormItem(
     val pass3Initials: String,
     val pass4Confirmed: Boolean,
     val pass4Initials: String,
-    val photoUris: List<String> = emptyList()
+    val photoUris: List<String> = emptyList(),
+    val contractorPrintName: String = "",
+    val contractorSignUri: String = "",
+    val contractorDateMillis: Long = 0L,
+    val facilityPrintName: String = "",
+    val facilitySignUri: String = "",
+    val facilityDateMillis: Long = 0L
 )

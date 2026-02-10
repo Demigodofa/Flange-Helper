@@ -13,20 +13,33 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.kevin.flangejointassembly.ui.components.FlangeHeader
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 
 @Composable
 fun JobDetailScreen(
     job: JobItem,
     onNewFlangeForm: () -> Unit,
+    onOpenForm: (FlangeFormItem) -> Unit,
+    onDeleteForm: (FlangeFormItem) -> Unit,
     onBack: () -> Unit
 ) {
     BackHandler(onBack = onBack)
+
+    var pendingDelete by remember { mutableStateOf<FlangeFormItem?>(null) }
 
     Scaffold(
         containerColor = FlangeColors.ScreenBackground
@@ -88,19 +101,47 @@ fun JobDetailScreen(
                 )
             } else {
                 job.flangeForms.forEachIndexed { index, form ->
-                    FlangeFormCard(form = form, index = index + 1)
+                    FlangeFormCard(
+                        form = form,
+                        index = index + 1,
+                        onOpen = { onOpenForm(form) },
+                        onDelete = { pendingDelete = form }
+                    )
                     Spacer(modifier = Modifier.height(12.dp))
                 }
             }
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
+
+    if (pendingDelete != null) {
+        AlertDialog(
+            onDismissRequest = { pendingDelete = null },
+            title = { Text("Delete Flange Form") },
+            text = { Text("Are you sure you want to delete this flange form?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingDelete?.let { onDeleteForm(it) }
+                    pendingDelete = null
+                }) {
+                    Text("Yes")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingDelete = null }) {
+                    Text("No")
+                }
+            }
+        )
+    }
 }
 
 @Composable
 private fun FlangeFormCard(
     form: FlangeFormItem,
-    index: Int
+    index: Int,
+    onOpen: () -> Unit,
+    onDelete: () -> Unit
 ) {
     val title = if (form.description.isNotBlank()) {
         form.description
@@ -116,13 +157,24 @@ private fun FlangeFormCard(
             .fillMaxWidth()
             .border(1.dp, FlangeColors.Divider, RoundedCornerShape(14.dp))
             .background(FlangeColors.CardBackground, RoundedCornerShape(14.dp))
+            .clickable { onOpen() }
             .padding(14.dp)
     ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleSmall,
-            color = FlangeColors.TextPrimary
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                color = FlangeColors.TextPrimary
+            )
+            Text(
+                text = "Open",
+                style = MaterialTheme.typography.labelLarge,
+                color = FlangeColors.PrimaryButton
+            )
+        }
         Spacer(modifier = Modifier.height(6.dp))
         Text(
             text = dateText,
@@ -135,5 +187,14 @@ private fun FlangeFormCard(
             style = MaterialTheme.typography.bodySmall,
             color = FlangeColors.TextSecondary
         )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+        ) {
+            TextButton(onClick = onDelete) {
+                Text("Delete", color = FlangeColors.DeleteButton)
+            }
+        }
     }
 }

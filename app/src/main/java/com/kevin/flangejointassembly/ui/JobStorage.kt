@@ -79,7 +79,13 @@ object JobStorage {
                                                 add(photosArray.optString(k))
                                             }
                                         }
-                                    }
+                                    },
+                                    contractorPrintName = formObj.optString("contractorPrintName"),
+                                    contractorSignUri = formObj.optString("contractorSignUri"),
+                                    contractorDateMillis = formObj.optLong("contractorDateMillis"),
+                                    facilityPrintName = formObj.optString("facilityPrintName"),
+                                    facilitySignUri = formObj.optString("facilitySignUri"),
+                                    facilityDateMillis = formObj.optLong("facilityDateMillis")
                                 )
                             )
                         }
@@ -164,6 +170,12 @@ object JobStorage {
                 val photosArray = JSONArray()
                 form.photoUris.forEach { uri -> photosArray.put(uri) }
                 formObj.put("photoUris", photosArray)
+                formObj.put("contractorPrintName", form.contractorPrintName)
+                formObj.put("contractorSignUri", form.contractorSignUri)
+                formObj.put("contractorDateMillis", form.contractorDateMillis)
+                formObj.put("facilityPrintName", form.facilityPrintName)
+                formObj.put("facilitySignUri", form.facilitySignUri)
+                formObj.put("facilityDateMillis", form.facilityDateMillis)
                 formsArray.put(formObj)
             }
             obj.put("forms", formsArray)

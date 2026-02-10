@@ -42,6 +42,7 @@ fun FlangeApp() {
     var selectedJobId by remember { mutableStateOf<String?>(null) }
     var editingJobId by remember { mutableStateOf<String?>(null) }
     var flangeJobId by remember { mutableStateOf<String?>(null) }
+    var editingFormId by remember { mutableStateOf<String?>(null) }
     var storageUsedBytes by remember { mutableStateOf(0L) }
 
     LaunchedEffect(Unit) {
@@ -133,7 +134,23 @@ fun FlangeApp() {
                         job = selectedJob,
                         onNewFlangeForm = {
                             flangeJobId = selectedJob.id
+                            editingFormId = null
                             currentScreen = FlangeScreen.FlangeForm
+                        },
+                        onOpenForm = { form ->
+                            flangeJobId = selectedJob.id
+                            editingFormId = form.id
+                            currentScreen = FlangeScreen.FlangeForm
+                        },
+                        onDeleteForm = { form ->
+                            val updatedJobs = jobs.map { item ->
+                                if (item.id == selectedJob.id) {
+                                    item.copy(flangeForms = item.flangeForms.filterNot { it.id == form.id })
+                                } else {
+                                    item
+                                }
+                            }
+                            persistJobs(updatedJobs)
                         },
                         onBack = { currentScreen = FlangeScreen.Start }
                     )
@@ -144,23 +161,40 @@ fun FlangeApp() {
             FlangeScreen.FlangeForm -> {
                 val job = jobs.find { it.id == flangeJobId }
                 if (job != null) {
+                    val existingForm = job.flangeForms.find { it.id == editingFormId }
                     FlangeFormScreen(
                         jobId = job.id,
                         jobNumber = job.number,
                         jobDateMillis = job.dateMillis,
+                        initialForm = existingForm,
                         onSave = { form ->
                             val updated = jobs.map { item ->
                                 if (item.id == job.id) {
-                                    item.copy(flangeForms = item.flangeForms + form.copy(jobId = job.id))
+                                    val updatedForms = if (existingForm != null) {
+                                        item.flangeForms.map { existing ->
+                                            if (existing.id == existingForm.id) {
+                                                form.copy(id = existingForm.id, jobId = job.id)
+                                            } else {
+                                                existing
+                                            }
+                                        }
+                                    } else {
+                                        item.flangeForms + form.copy(jobId = job.id)
+                                    }
+                                    item.copy(flangeForms = updatedForms)
                                 } else {
                                     item
                                 }
                             }
                             persistJobs(updated)
+                            editingFormId = null
                             currentScreen = FlangeScreen.JobDetail
                             selectedJobId = job.id
                         },
-                        onBack = { currentScreen = FlangeScreen.JobDetail }
+                        onBack = {
+                            editingFormId = null
+                            currentScreen = FlangeScreen.JobDetail
+                        }
                     )
                 } else {
                     currentScreen = FlangeScreen.Start
