@@ -4,6 +4,7 @@ plugins {
 }
 
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import com.android.build.api.variant.ApkVariantOutput
 
 android {
     namespace = "com.kevin.flangejointassembly"
@@ -42,7 +43,7 @@ android {
 extensions.getByType<ApplicationAndroidComponentsExtension>().apply {
     onVariants { variant ->
         variant.outputs.forEach { output ->
-            output.outputFileName.set("FlangeHelper-${variant.name}.apk")
+            (output as? ApkVariantOutput)?.outputFileName?.set("FlangeHelper-${variant.name}.apk")
         }
     }
 }
