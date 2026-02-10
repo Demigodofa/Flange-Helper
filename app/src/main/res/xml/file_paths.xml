@@ -3,4 +3,7 @@
     <files-path
         name="photos"
         path="flange_helper/photos/" />
+    <files-path
+        name="signatures"
+        path="flange_helper/signatures/" />
 </paths>
