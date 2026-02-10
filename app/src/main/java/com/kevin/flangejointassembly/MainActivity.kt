@@ -26,7 +26,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            FlangeJointAssemblyHelperTheme {
+            FlangeJointAssemblyHelperTheme(darkTheme = false) {
                 FlangeApp()
             }
         }
