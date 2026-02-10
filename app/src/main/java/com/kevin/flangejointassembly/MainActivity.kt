@@ -1,6 +1,8 @@
 package com.kevin.flangejointassembly
 
 import android.os.Bundle
+import android.content.Intent
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -19,6 +21,7 @@ import com.kevin.flangejointassembly.ui.JobItem
 import com.kevin.flangejointassembly.ui.JobStorage
 import com.kevin.flangejointassembly.ui.SplashScreen
 import com.kevin.flangejointassembly.ui.StartScreen
+import com.kevin.flangejointassembly.ui.exportJobToPdf
 import java.util.UUID
 
 class MainActivity : ComponentActivity() {
@@ -57,6 +60,15 @@ fun FlangeApp() {
         storageUsedBytes = JobStorage.calculateStorageBytes(context)
     }
 
+    fun sharePdf(uri: android.net.Uri) {
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "application/pdf"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(Intent.createChooser(intent, "Share PDF"))
+    }
+
     if (showSplash) {
         SplashScreen(onTimeout = { showSplash = false })
     } else {
@@ -77,8 +89,13 @@ fun FlangeApp() {
                     editingJobId = job.id
                     currentScreen = FlangeScreen.JobForm
                 },
-                onExportJob = { _ ->
-                    // TODO: Wire PDF export.
+                onExportJob = { job ->
+                    val uri = exportJobToPdf(context, job)
+                    if (uri != null) {
+                        sharePdf(uri)
+                    } else {
+                        Toast.makeText(context, "No flange forms to export.", Toast.LENGTH_SHORT).show()
+                    }
                 },
                 onDeleteJob = { job ->
                     val updated = jobs.filterNot { it.id == job.id }

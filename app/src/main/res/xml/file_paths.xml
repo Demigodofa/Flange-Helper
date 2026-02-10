@@ -6,4 +6,7 @@
     <files-path
         name="signatures"
         path="flange_helper/signatures/" />
+    <files-path
+        name="exports"
+        path="flange_helper/exports/" />
 </paths>

@@ -1759,7 +1759,6 @@ private fun SignatureDialog(
                                 currentStroke = listOf(offset)
                             },
                             onDrag = { change, _ ->
-                                change.consume()
                                 currentStroke = currentStroke + change.position
                             },
                             onDragEnd = {
