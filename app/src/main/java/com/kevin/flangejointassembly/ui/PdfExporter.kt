@@ -194,10 +194,15 @@ fun exportJobToPdf(context: Context, job: JobItem): Uri? {
         y += 18
         val boltCount = form.boltHoles.toIntOrNull()
         if (boltCount != null) {
+            val markingOrder = generateBoltSequence(boltCount).joinToString(", ")
             val boltNote = "Starting at the 12 o'clock position and moving clockwise, " +
-                "the bolt holes were marked 1, 2, 3, 4 ... $boltCount. " +
-                "Tightening order: 1, 2, 3, 4 ..."
-            canvas.drawText(fitText(boltNote, labelPaint, PAGE_WIDTH - 2 * MARGIN), leftX.toFloat(), y.toFloat(), labelPaint)
+                "mark each bolt in this order: $markingOrder. " +
+                "Tightening order: sequential 1, 2, 3, 4 ..."
+            val lines = wrapText(boltNote, labelPaint, PAGE_WIDTH - 2 * MARGIN)
+            lines.forEach { line ->
+                canvas.drawText(line, leftX.toFloat(), y.toFloat(), labelPaint)
+                y += 12
+            }
         }
 
         document.finishPage(page)
@@ -392,6 +397,58 @@ private fun formatPassLine(form: FlangeFormItem, pass: Int): String {
         else -> form.pass4Initials
     }
     return if (initials.isBlank()) range else "$range ($initials)"
+}
+
+private fun wrapText(text: String, paint: Paint, maxWidth: Int): List<String> {
+    val words = text.split(" ")
+    val lines = mutableListOf<String>()
+    var current = ""
+    for (word in words) {
+        val candidate = if (current.isBlank()) word else "$current $word"
+        if (paint.measureText(candidate) <= maxWidth) {
+            current = candidate
+        } else {
+            if (current.isNotBlank()) {
+                lines.add(current)
+            }
+            current = word
+        }
+    }
+    if (current.isNotBlank()) {
+        lines.add(current)
+    }
+    return lines
+}
+
+private fun generateBoltSequence(boltCount: Int): List<Int> {
+    if (boltCount < 4 || boltCount % 2 != 0) return emptyList()
+    val half = boltCount / 2
+    var pow2 = 1
+    var bits = 0
+    while (pow2 < half) {
+        pow2 = pow2 shl 1
+        bits += 1
+    }
+    val order = mutableListOf<Int>()
+    for (i in 0 until pow2) {
+        val rev = reverseBits(i, bits)
+        if (rev < half) {
+            order.add(rev)
+        }
+    }
+    val odds = order.map { 2 * it + 1 }
+    val evens = order.map { 2 * it + 2 }
+    return odds + evens
+}
+
+private fun reverseBits(value: Int, bitCount: Int): Int {
+    var v = value
+    var result = 0
+    repeat(bitCount) {
+        result = (result shl 1) or (v and 1)
+        v = v shr 1
+    }
+    return result
 }
 
 private fun scaleBitmapToFit(bitmap: Bitmap, maxWidth: Int, maxHeight: Int): Bitmap {

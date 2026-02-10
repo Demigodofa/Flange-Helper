@@ -1040,8 +1040,9 @@ fun FlangeFormScreen(
         }
 
         if (strengthKsi != null) {
-            val strengthNote = if (usingAllowable && usedTempF.isNotBlank()) {
-                "Using S = $strengthKsi ksi at $usedTempF F"
+            val enteredTemp = workingTempF.takeIf { it.isNotBlank() }
+            val strengthNote = if (usingAllowable && enteredTemp != null) {
+                "Using S = $strengthKsi ksi at ${enteredTemp} F"
             } else {
                 "Using room-temp Sy = $strengthKsi ksi"
             }
@@ -1832,14 +1833,14 @@ private fun buildReportLine(
     directionWord: String,
     sequence: List<Int>
 ): String {
-    val tightenPreview = if (sequence.isNotEmpty()) {
-        sequence.take(4).joinToString(", ")
+    val markingOrder = if (sequence.isNotEmpty()) {
+        sequence.joinToString(", ")
     } else {
-        "1, 2, 3, 4"
+        (1..boltCount).joinToString(", ")
     }
     return "$boltCount bolt holes starting from approx. 12 o'clock going $directionWord, " +
-        "mark each bolt in this order: 1, 2, 3, 4 ... $boltCount.\n" +
-        "Tightening order: $tightenPreview ..."
+        "mark each bolt in this order: $markingOrder.\n" +
+        "Tightening order: sequential 1, 2, 3, 4 ..."
 }
 
 private fun generateBoltSequence(boltCount: Int): List<Int> {
