@@ -54,6 +54,8 @@ object JobStorage {
                                     fastenerDiameter = formObj.optString("fastenerDiameter"),
                                     threadSeries = formObj.optString("threadSeries"),
                                     nutSpec = formObj.optString("nutSpec"),
+                                    nutOverrideAcknowledged = formObj.optBoolean("nutOverrideAcknowledged"),
+                                    washerUsed = formObj.optBoolean("washerUsed"),
                                     workingTempF = formObj.optString("workingTempF"),
                                     roundedTempF = formObj.optString("roundedTempF"),
                                     torqueMethod = formObj.optString("torqueMethod"),
@@ -149,6 +151,8 @@ object JobStorage {
                 formObj.put("fastenerDiameter", form.fastenerDiameter)
                 formObj.put("threadSeries", form.threadSeries)
                 formObj.put("nutSpec", form.nutSpec)
+                formObj.put("nutOverrideAcknowledged", form.nutOverrideAcknowledged)
+                formObj.put("washerUsed", form.washerUsed)
                 formObj.put("workingTempF", form.workingTempF)
                 formObj.put("roundedTempF", form.roundedTempF)
                 formObj.put("torqueMethod", form.torqueMethod)
@@ -255,13 +259,28 @@ object JobStorage {
 
     private fun fileFromContentUri(context: Context, uriString: String): File? {
         val uri = Uri.parse(uriString)
-        if (uri.scheme != "content") return null
-        val path = uri.path ?: return null
-        val marker = "/$STORAGE_DIR/"
-        val index = path.indexOf(marker)
-        if (index == -1) return null
-        val relative = path.substring(index + marker.length)
-        if (relative.isBlank()) return null
-        return File(storageRoot(context), relative)
+        return when (uri.scheme) {
+            "file" -> uri.path?.let { File(it) }
+            "content" -> {
+                val segments = uri.pathSegments
+                if (segments.isNotEmpty()) {
+                    val rootName = segments.first()
+                    if (rootName == "photos" || rootName == "signatures" || rootName == "exports") {
+                        val relative = segments.drop(1).joinToString("/")
+                        if (relative.isNotBlank()) {
+                            return File(storageRoot(context), "$rootName/$relative")
+                        }
+                    }
+                }
+                val path = uri.path ?: return null
+                val marker = "/$STORAGE_DIR/"
+                val index = path.indexOf(marker)
+                if (index == -1) return null
+                val relative = path.substring(index + marker.length)
+                if (relative.isBlank()) return null
+                File(storageRoot(context), relative)
+            }
+            else -> null
+        }
     }
 }

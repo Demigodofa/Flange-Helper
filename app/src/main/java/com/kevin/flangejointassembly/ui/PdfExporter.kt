@@ -43,9 +43,37 @@ fun exportJobToPdf(
     val file = File(exportDir, fileName)
 
     val document = PdfDocument()
+    val nutPairingConfig = NutPairingConfig.load(context)
 
     var pageNumber = 1
     job.flangeForms.forEachIndexed { index, form ->
+        val boltSpecKey = mapBoltSpecKey(form.fastenerSpec, form.fastenerClass)
+        val nutKey = mapNutKey(form.nutSpec)
+        val nutPairingEvaluation = NutPairingConfig.evaluate(nutPairingConfig, boltSpecKey, nutKey)
+        val nutMismatchNote = if (!nutPairingEvaluation?.warnings.isNullOrEmpty()) {
+            "Selected nut is not the commonly paired type for this stud material/grade. Proceed only if facility spec allows."
+        } else {
+            null
+        }
+
+        val diameterIn = FlangeMath.parseDiameterInches(form.fastenerDiameter)
+        val asIn2 = form.asUsed.toDoubleOrNull()
+        val strengthKsi = form.strengthKsiUsed.toDoubleOrNull()
+        val pctYield = parsePercentValue(form.pctYieldTarget)
+        val targetBoltStressKsi = if (strengthKsi != null && pctYield != null) strengthKsi * pctYield else null
+        val calculatedBoltLoadF = if (asIn2 != null && targetBoltStressKsi != null) {
+            targetBoltStressKsi * 1000.0 * asIn2
+        } else {
+            null
+        }
+        val targetBoltLoadF = form.targetBoltLoadF.toDoubleOrNull() ?: calculatedBoltLoadF
+        val kUsed = form.kUsed.toDoubleOrNull()
+        val calculatedTorque = if (targetBoltLoadF != null && diameterIn != null && kUsed != null) {
+            (kUsed * diameterIn * targetBoltLoadF) / 12.0
+        } else {
+            null
+        }
+
         val pageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageNumber++).create()
         val page = document.startPage(pageInfo)
         val canvas = page.canvas
@@ -129,28 +157,29 @@ fun exportJobToPdf(
             "Fastener Type" to form.fastenerType,
             "Fastener Spec" to form.fastenerSpec,
             "Fastener Class" to form.fastenerClass,
-            "Fastener Length" to form.fastenerLength,
-            "Fastener Dia" to form.fastenerDiameter,
+            "Fastener Length" to formatInches(form.fastenerLength),
+            "Fastener Dia" to formatInches(form.fastenerDiameter),
             "Thread Series" to form.threadSeries,
-            "Nut Spec" to form.nutSpec
+            "Nut Spec" to form.nutSpec,
+            "Washer Used" to if (form.washerUsed) "Yes" else "No"
         )
 
         val rightFields = listOf(
             "Wrench S/N" to form.wrenchSerials,
             "Wrench Cal" to if (form.wrenchCalDateMillis > 0) formatDate(form.wrenchCalDateMillis) else "",
-            "Torque Dry" to if (form.torqueDry) "Yes" else "",
-            "Torque Wet" to if (form.torqueWet) "Yes" else "",
-            "Lube" to form.lubricantType,
-            "Work Temp" to form.workingTempF,
-            "Torque Method" to form.torqueMethod,
-            "Target Bolt Load F" to form.targetBoltLoadF,
-            "Yield %" to form.pctYieldTarget,
-            "TPI" to form.tpiUsed,
-            "As" to form.asUsed,
-            "Strength" to form.strengthKsiUsed,
-            "K Used" to form.kUsed,
-            "Calc Torque" to form.calculatedTargetTorque,
-            "Specified" to form.specifiedTargetTorque,
+            "Lubricated" to if (form.torqueWet) "Yes" else "No",
+            "Lubricant" to form.lubricantType,
+            "Method" to formatTorqueMethod(form.torqueMethod),
+            "Target Bolt Stress" to formatKsi(targetBoltStressKsi?.toString()),
+            "Yield %" to formatPercentLabel(pctYield),
+            "TPI" to formatTpi(form.tpiUsed),
+            "As" to formatArea(form.asUsed),
+            "S Value" to formatKsi(form.strengthKsiUsed),
+            "Target Bolt Load F" to formatForce(targetBoltLoadF?.toString()),
+            "Nut factor (K)" to formatK(form.kUsed),
+            "Calc Torque" to formatTorque(form.calculatedTargetTorque.ifBlank { calculatedTorque?.let { String.format(Locale.US, "%.0f", it) } ?: "" }),
+            "Specified" to formatTorque(form.specifiedTargetTorque),
+            "Nut Override Ack" to if (form.nutOverrideAcknowledged) "Yes" else "No",
             "Pass1" to formatPassLine(form, 1),
             "Pass2" to formatPassLine(form, 2),
             "Pass3" to formatPassLine(form, 3),
@@ -174,7 +203,22 @@ fun exportJobToPdf(
         canvas.drawRect(leftBox, linePaint)
         canvas.drawRect(rightBox, linePaint)
 
-        y += 22
+        y += 18
+        if (!nutMismatchNote.isNullOrBlank()) {
+            val notePaint = Paint().apply {
+                color = Color.BLACK
+                textSize = 10f
+                isFakeBoldText = true
+            }
+            val lines = wrapText("Nut Warning: $nutMismatchNote", notePaint, PAGE_WIDTH - (MARGIN * 2))
+            lines.forEach { line ->
+                y += 12
+                canvas.drawText(line, MARGIN.toFloat(), y.toFloat(), notePaint)
+            }
+            y += 8
+        } else {
+            y += 4
+        }
         y = drawSignatureSection(
             context = context,
             canvas = canvas,
@@ -209,7 +253,7 @@ fun exportJobToPdf(
         y += 18
         val boltCount = form.boltHoles.toIntOrNull()
         if (boltCount != null) {
-            val markingOrder = generateBoltSequence(boltCount).take(4).joinToString(", ")
+            val markingOrder = FlangeMath.generateBoltSequence(boltCount).joinToString(", ")
             val boltNote = "Starting at the 12 o'clock position and moving clockwise, " +
                 "mark each bolt in this order: $markingOrder ... " +
                 "Tightening order: sequential 1, 2, 3, 4 ..."
@@ -415,10 +459,15 @@ private fun formatPassLine(form: FlangeFormItem, pass: Int): String {
     }
     val low = target * lowPct
     val high = target * highPct
-    val range = if (pass <= 2) {
-        String.format(Locale.US, "%.0f-%.0f ft-lb", low, high)
+    val pctLabel = if (pass <= 2) {
+        String.format(Locale.US, "%.0f-%.0f%%", lowPct * 100.0, highPct * 100.0)
     } else {
-        String.format(Locale.US, "%.0f ft-lb", high)
+        "100%"
+    }
+    val range = if (pass <= 2) {
+        String.format(Locale.US, "%s (%.0f-%.0f ft-lb)", pctLabel, low, high)
+    } else {
+        String.format(Locale.US, "%s (%.0f ft-lb)", pctLabel, high)
     }
     val initials = when (pass) {
         1 -> form.pass1Initials
@@ -426,7 +475,98 @@ private fun formatPassLine(form: FlangeFormItem, pass: Int): String {
         3 -> form.pass3Initials
         else -> form.pass4Initials
     }
-    return if (initials.isBlank()) range else "$range ($initials)"
+    return if (initials.isBlank()) range else "$range $initials"
+}
+
+private fun formatTemp(value: String): String {
+    val temp = value.toDoubleOrNull() ?: return ""
+    return String.format(Locale.US, "%.0f F", temp)
+}
+
+private fun formatTpi(value: String): String {
+    val tpi = value.toDoubleOrNull() ?: return value
+    return String.format(Locale.US, "%.0f threads/in", tpi)
+}
+
+private fun formatArea(value: String): String {
+    val area = value.toDoubleOrNull() ?: return value
+    return String.format(Locale.US, "%.4f in^2", area)
+}
+
+private fun formatKsi(value: String?): String {
+    val ksi = value?.toDoubleOrNull() ?: return ""
+    return String.format(Locale.US, "%.1f ksi", ksi)
+}
+
+private fun formatForce(value: String?): String {
+    val f = value?.toDoubleOrNull() ?: return ""
+    return String.format(Locale.US, "%.0f lbf", f)
+}
+
+private fun formatTorque(value: String): String {
+    val torque = value.toDoubleOrNull() ?: return ""
+    return String.format(Locale.US, "%.0f ft-lb", torque)
+}
+
+private fun formatK(value: String): String {
+    val k = value.toDoubleOrNull() ?: return value
+    return String.format(Locale.US, "K=%.2f", k)
+}
+
+private fun formatPercentLabel(value: Double?): String {
+    if (value == null) return ""
+    return String.format(Locale.US, "%.0f%%", value * 100.0)
+}
+
+private fun formatTorqueMethod(value: String): String {
+    return when (value) {
+        "YIELD_PERCENT" -> "% of yield"
+        "USER_INPUT" -> "Use F directly"
+        "SPECIFIED_TORQUE" -> "Specified torque"
+        else -> value
+    }
+}
+
+private fun formatInches(value: String): String {
+    if (value.isBlank()) return ""
+    return "$value in"
+}
+
+private fun parsePercentValue(text: String): Double? {
+    val trimmed = text.trim()
+    if (trimmed.isEmpty()) return null
+    val value = trimmed.toDoubleOrNull() ?: return null
+    return if (value > 1.0) value / 100.0 else value
+}
+
+private fun mapNutKey(value: String): String? {
+    return when (value) {
+        "A194 2H" -> "A194_2H"
+        "A194 2HM" -> "A194_2HM"
+        "A194 4" -> "A194_4"
+        "A194 4M" -> "A194_4M"
+        "A194 7" -> "A194_7"
+        "A194 7M" -> "A194_7M"
+        "A194 8 (304)" -> "A194_8_304"
+        "A194 8M (316)" -> "A194_8M_316"
+        else -> null
+    }
+}
+
+private fun mapBoltSpecKey(spec: String, fastenerClass: String): BoltSpecKey? {
+    return when (spec) {
+        "A193 B7" -> BoltSpecKey("SA-193", "B7", null)
+        "A193 B7M" -> BoltSpecKey("SA-193", "B7M", null)
+        "A193 B16" -> BoltSpecKey("SA-193", "B16", null)
+        "A193 B8 (304)" -> BoltSpecKey("SA-193", "B8", null)
+        "A193 B8M (316)" -> BoltSpecKey("SA-193", "B8M", null)
+        "A320 L7" -> BoltSpecKey("SA-320", "L7", null)
+        "A320 L7M" -> BoltSpecKey("SA-320", "L7M", null)
+        "A453 Grade 660" -> {
+            if (fastenerClass.isBlank()) null else BoltSpecKey("SA-453", "660", "Class ${fastenerClass}")
+        }
+        else -> null
+    }
 }
 
 private fun wrapText(text: String, paint: Paint, maxWidth: Int): List<String> {
@@ -448,37 +588,6 @@ private fun wrapText(text: String, paint: Paint, maxWidth: Int): List<String> {
         lines.add(current)
     }
     return lines
-}
-
-private fun generateBoltSequence(boltCount: Int): List<Int> {
-    if (boltCount < 4 || boltCount % 2 != 0) return emptyList()
-    val half = boltCount / 2
-    var pow2 = 1
-    var bits = 0
-    while (pow2 < half) {
-        pow2 = pow2 shl 1
-        bits += 1
-    }
-    val order = mutableListOf<Int>()
-    for (i in 0 until pow2) {
-        val rev = reverseBits(i, bits)
-        if (rev < half) {
-            order.add(rev)
-        }
-    }
-    val odds = order.map { 2 * it + 1 }
-    val evens = order.map { 2 * it + 2 }
-    return odds + evens
-}
-
-private fun reverseBits(value: Int, bitCount: Int): Int {
-    var v = value
-    var result = 0
-    repeat(bitCount) {
-        result = (result shl 1) or (v and 1)
-        v = v shr 1
-    }
-    return result
 }
 
 private fun scaleBitmapMaxEdge(bitmap: Bitmap, maxEdge: Int): Bitmap {

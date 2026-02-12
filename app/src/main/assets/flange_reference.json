@@ -194,102 +194,96 @@
             {
               "diaMin_in": 0.0,
               "diaMax_in": 2.5,
-              "Sy": 105,
-              "Su": 125
+              "Sy": 105.0,
+              "Su": 125.0
             },
             {
-              "diaMin_in": 2.625,
+              "diaMin_in": 2.501,
               "diaMax_in": 4.0,
-              "Sy": 95,
-              "Su": 115
+              "Sy": 95.0,
+              "Su": 115.0
             },
             {
-              "diaMin_in": 4.125,
+              "diaMin_in": 4.001,
               "diaMax_in": 7.0,
-              "Sy": 75,
-              "Su": 100
+              "Sy": 75.0,
+              "Su": 100.0
             }
           ],
           "A193_B16": [
             {
               "diaMin_in": 0.0,
               "diaMax_in": 2.5,
-              "Sy": 105,
-              "Su": 125
+              "Sy": 105.0,
+              "Su": 125.0
             },
             {
-              "diaMin_in": 2.625,
+              "diaMin_in": 2.501,
               "diaMax_in": 4.0,
-              "Sy": 95,
-              "Su": 110
+              "Sy": 95.0,
+              "Su": 110.0
             },
             {
-              "diaMin_in": 4.125,
-              "diaMax_in": 7.0,
-              "Sy": 85,
-              "Su": 100
+              "diaMin_in": 4.001,
+              "diaMax_in": 8.0,
+              "Sy": 85.0,
+              "Su": 100.0
             }
           ],
           "A193_B8_Class1_304": [
             {
               "diaMin_in": 0.0,
-              "diaMax_in": 999.0,
-              "Sy": 30,
-              "Su": 75
+              "diaMax_in": 1000000000.0,
+              "Sy": 30.0,
+              "Su": 75.0
             }
           ],
           "A193_B8M_Class1_316": [
             {
               "diaMin_in": 0.0,
-              "diaMax_in": 999.0,
-              "Sy": 30,
-              "Su": 75
+              "diaMax_in": 1000000000.0,
+              "Sy": 30.0,
+              "Su": 75.0
             }
           ],
           "A320_L7": [
             {
               "diaMin_in": 0.0,
               "diaMax_in": 2.5,
-              "Sy": 105,
-              "Su": 125
+              "Sy": 105.0,
+              "Su": 125.0
             }
           ],
           "A193_B7M": [
             {
               "diaMin_in": 0.0,
-              "diaMax_in": 4.0,
-              "Sy": 80,
-              "Su": 100
-            },
-            {
-              "diaMin_in": 4.125,
-              "diaMax_in": 7.0,
-              "Sy": 75,
-              "Su": 100
+              "diaMax_in": 2.5,
+              "Sy": 80.0,
+              "Su": 100.0
             }
           ],
           "A320_L7M": [
             {
               "diaMin_in": 0.0,
               "diaMax_in": 2.5,
-              "Sy": 80,
-              "Su": 100
+              "Sy": 80.0,
+              "Su": 100.0
             }
           ],
           "A453_660_ClassA": [
             {
               "diaMin_in": 0.0,
-              "diaMax_in": 999.0,
-              "Sy": "PLACEHOLDER_ksi_from_spec",
-              "Su": "PLACEHOLDER_ksi_from_spec"
+              "diaMax_in": 1000000000.0,
+              "Sy": 85.0,
+              "Su": 130.0
             }
           ],
           "A453_660_ClassB": [
             {
               "diaMin_in": 0.0,
-              "diaMax_in": 999.0,
-              "Sy": "PLACEHOLDER_ksi_from_spec",
-              "Su": "PLACEHOLDER_ksi_from_spec"
+              "diaMax_in": 1000000000.0,
+              "Sy": 85.0,
+              "Su": 130.0
             }
           ],
           "A453_660_ClassC": [
@@ -317,6 +311,51 @@
               "temps": [
                 {
                   "tMin": 100,
+                  "tMax": 100,
+                  "S": 25.0
+                },
+                {
+                  "tMin": 150,
+                  "tMax": 150,
+                  "S": 25.0
+                },
+                {
+                  "tMin": 200,
+                  "tMax": 200,
+                  "S": 25.0
+                },
+                {
+                  "tMin": 250,
+                  "tMax": 250,
+                  "S": 25.0
+                },
+                {
+                  "tMin": 300,
+                  "tMax": 300,
+                  "S": 25.0
+                },
+                {
+                  "tMin": 350,
+                  "tMax": 350,
+                  "S": 25.0
+                },
+                {
+                  "tMin": 400,
+                  "tMax": 400,
+                  "S": 25.0
+                },
+                {
+                  "tMin": 450,
+                  "tMax": 450,
+                  "S": 25.0
+                },
+                {
+                  "tMin": 500,
+                  "tMax": 500,
+                  "S": 25.0
+                },
+                {
+                  "tMin": 550,
                   "tMax": 550,
                   "S": 25.0
                 },
@@ -339,6 +378,16 @@
                   "tMin": 750,
                   "tMax": 750,
                   "S": 12.5
+                },
+                {
+                  "tMin": 950,
+                  "tMax": 950,
+                  "S": 8.5
+                },
+                {
+                  "tMin": 1000,
+                  "tMax": 1000,
+                  "S": 4.5
                 }
               ]
             },
@@ -348,6 +397,51 @@
               "temps": [
                 {
                   "tMin": 100,
+                  "tMax": 100,
+                  "S": 23.0
+                },
+                {
+                  "tMin": 150,
+                  "tMax": 150,
+                  "S": 23.0
+                },
+                {
+                  "tMin": 200,
+                  "tMax": 200,
+                  "S": 23.0
+                },
+                {
+                  "tMin": 250,
+                  "tMax": 250,
+                  "S": 23.0
+                },
+                {
+                  "tMin": 300,
+                  "tMax": 300,
+                  "S": 23.0
+                },
+                {
+                  "tMin": 350,
+                  "tMax": 350,
+                  "S": 23.0
+                },
+                {
+                  "tMin": 400,
+                  "tMax": 400,
+                  "S": 23.0
+                },
+                {
+                  "tMin": 450,
+                  "tMax": 450,
+                  "S": 23.0
+                },
+                {
+                  "tMin": 500,
+                  "tMax": 500,
+                  "S": 23.0
+                },
+                {
+                  "tMin": 550,
                   "tMax": 550,
                   "S": 23.0
                 },
@@ -370,6 +464,16 @@
                   "tMin": 750,
                   "tMax": 750,
                   "S": 12.5
+                },
+                {
+                  "tMin": 950,
+                  "tMax": 950,
+                  "S": 8.5
+                },
+                {
+                  "tMin": 1000,
+                  "tMax": 1000,
+                  "S": 4.5
                 }
               ]
             },
@@ -379,6 +483,56 @@
               "temps": [
                 {
                   "tMin": 100,
+                  "tMax": 100,
+                  "S": 18.8
+                },
+                {
+                  "tMin": 150,
+                  "tMax": 150,
+                  "S": 18.8
+                },
+                {
+                  "tMin": 200,
+                  "tMax": 200,
+                  "S": 18.8
+                },
+                {
+                  "tMin": 250,
+                  "tMax": 250,
+                  "S": 18.8
+                },
+                {
+                  "tMin": 300,
+                  "tMax": 300,
+                  "S": 18.8
+                },
+                {
+                  "tMin": 350,
+                  "tMax": 350,
+                  "S": 18.8
+                },
+                {
+                  "tMin": 400,
+                  "tMax": 400,
+                  "S": 18.8
+                },
+                {
+                  "tMin": 450,
+                  "tMax": 450,
+                  "S": 18.8
+                },
+                {
+                  "tMin": 500,
+                  "tMax": 500,
+                  "S": 18.8
+                },
+                {
+                  "tMin": 550,
+                  "tMax": 550,
+                  "S": 18.8
+                },
+                {
+                  "tMin": 600,
                   "tMax": 600,
                   "S": 18.8
                 },
@@ -396,6 +550,16 @@
                   "tMin": 750,
                   "tMax": 750,
                   "S": 12.5
+                },
+                {
+                  "tMin": 950,
+                  "tMax": 950,
+                  "S": 8.5
+                },
+                {
+                  "tMin": 1000,
+                  "tMax": 1000,
+                  "S": 4.5
                 }
               ]
             }
@@ -407,6 +571,56 @@
               "temps": [
                 {
                   "tMin": 100,
+                  "tMax": 100,
+                  "S": 20.0
+                },
+                {
+                  "tMin": 150,
+                  "tMax": 150,
+                  "S": 20.0
+                },
+                {
+                  "tMin": 200,
+                  "tMax": 200,
+                  "S": 20.0
+                },
+                {
+                  "tMin": 250,
+                  "tMax": 250,
+                  "S": 20.0
+                },
+                {
+                  "tMin": 300,
+                  "tMax": 300,
+                  "S": 20.0
+                },
+                {
+                  "tMin": 350,
+                  "tMax": 350,
+                  "S": 20.0
+                },
+                {
+                  "tMin": 400,
+                  "tMax": 400,
+                  "S": 20.0
+                },
+                {
+                  "tMin": 450,
+                  "tMax": 450,
+                  "S": 20.0
+                },
+                {
+                  "tMin": 500,
+                  "tMax": 500,
+                  "S": 20.0
+                },
+                {
+                  "tMin": 550,
+                  "tMax": 550,
+                  "S": 20.0
+                },
+                {
+                  "tMin": 600,
                   "tMax": 600,
                   "S": 20.0
                 },
@@ -424,29 +638,205 @@
                   "tMin": 750,
                   "tMax": 750,
                   "S": 12.5
+                },
+                {
+                  "tMin": 950,
+                  "tMax": 950,
+                  "S": 8.5
+                },
+                {
+                  "tMin": 1000,
+                  "tMax": 1000,
+                  "S": 4.5
                 }
               ]
             }
           ],
           "A193_B16": [
             {
+              "diaMin_in": 0.0,
+              "diaMax_in": 2.5,
+              "temps": [
+                {
+                  "tMin": 100,
+                  "tMax": 100,
+                  "S": 25.0
+                },
+                {
+                  "tMin": 150,
+                  "tMax": 150,
+                  "S": 25.0
+                },
+                {
+                  "tMin": 200,
+                  "tMax": 200,
+                  "S": 25.0
+                },
+                {
+                  "tMin": 250,
+                  "tMax": 250,
+                  "S": 25.0
+                },
+                {
+                  "tMin": 300,
+                  "tMax": 300,
+                  "S": 25.0
+                },
+                {
+                  "tMin": 350,
+                  "tMax": 350,
+                  "S": 25.0
+                },
+                {
+                  "tMin": 400,
+                  "tMax": 400,
+                  "S": 25.0
+                },
+                {
+                  "tMin": 450,
+                  "tMax": 450,
+                  "S": 25.0
+                },
+                {
+                  "tMin": 500,
+                  "tMax": 500,
+                  "S": 25.0
+                },
+                {
+                  "tMin": 550,
+                  "tMax": 550,
+                  "S": 25.0
+                },
+                {
+                  "tMin": 600,
+                  "tMax": 600,
+                  "S": 25.0
+                },
+                {
+                  "tMin": 650,
+                  "tMax": 650,
+                  "S": 25.0
+                },
+                {
+                  "tMin": 700,
+                  "tMax": 700,
+                  "S": 23.5
+                },
+                {
+                  "tMin": 750,
+                  "tMax": 750,
+                  "S": 20.5
+                },
+                {
+                  "tMin": 950,
+                  "tMax": 950,
+                  "S": 16.0
+                },
+                {
+                  "tMin": 1000,
+                  "tMax": 1000,
+                  "S": 11.0
+                },
+                {
+                  "tMin": 1050,
+                  "tMax": 1050,
+                  "S": 6.3
+                },
+                {
+                  "tMin": 1100,
+                  "tMax": 1100,
+                  "S": 2.8
+                }
+              ]
+            },
+            {
               "diaMin_in": 2.501,
               "diaMax_in": 4.0,
               "temps": [
                 {
                   "tMin": 100,
-                  "tMax": 900,
-                  "S": 18.8
+                  "tMax": 100,
+                  "S": 22.0
+                },
+                {
+                  "tMin": 150,
+                  "tMax": 150,
+                  "S": 22.0
+                },
+                {
+                  "tMin": 200,
+                  "tMax": 200,
+                  "S": 22.0
+                },
+                {
+                  "tMin": 250,
+                  "tMax": 250,
+                  "S": 22.0
+                },
+                {
+                  "tMin": 300,
+                  "tMax": 300,
+                  "S": 22.0
+                },
+                {
+                  "tMin": 350,
+                  "tMax": 350,
+                  "S": 22.0
+                },
+                {
+                  "tMin": 400,
+                  "tMax": 400,
+                  "S": 22.0
+                },
+                {
+                  "tMin": 450,
+                  "tMax": 450,
+                  "S": 22.0
+                },
+                {
+                  "tMin": 500,
+                  "tMax": 500,
+                  "S": 22.0
+                },
+                {
+                  "tMin": 550,
+                  "tMax": 550,
+                  "S": 22.0
+                },
+                {
+                  "tMin": 600,
+                  "tMax": 600,
+                  "S": 22.0
+                },
+                {
+                  "tMin": 650,
+                  "tMax": 650,
+                  "S": 21.0
+                },
+                {
+                  "tMin": 700,
+                  "tMax": 700,
+                  "S": 18.5
                 },
                 {
                   "tMin": 950,
                   "tMax": 950,
-                  "S": 17.7
+                  "S": 15.3
                 },
                 {
                   "tMin": 1000,
                   "tMax": 1000,
-                  "S": 17.3
+                  "S": 11.0
+                },
+                {
+                  "tMin": 1050,
+                  "tMax": 1050,
+                  "S": 6.3
+                },
+                {
+                  "tMin": 1100,
+                  "tMax": 1100,
+                  "S": 2.8
                 }
               ]
             },
@@ -457,62 +847,92 @@
                 {
                   "tMin": 100,
                   "tMax": 100,
-                  "S": 18.8
+                  "S": 20.0
                 },
                 {
                   "tMin": 150,
                   "tMax": 150,
-                  "S": 16.7
+                  "S": 20.0
                 },
                 {
                   "tMin": 200,
                   "tMax": 200,
-                  "S": 15.0
+                  "S": 20.0
                 },
                 {
                   "tMin": 250,
                   "tMax": 250,
-                  "S": 13.8
+                  "S": 20.0
                 },
                 {
                   "tMin": 300,
                   "tMax": 300,
-                  "S": 12.9
+                  "S": 20.0
                 },
                 {
                   "tMin": 350,
                   "tMax": 350,
-                  "S": 12.1
+                  "S": 20.0
                 },
                 {
                   "tMin": 400,
                   "tMax": 400,
-                  "S": 12.0
+                  "S": 20.0
                 },
                 {
                   "tMin": 450,
                   "tMax": 450,
-                  "S": 11.8
+                  "S": 20.0
                 },
                 {
                   "tMin": 500,
                   "tMax": 500,
-                  "S": 11.5
+                  "S": 20.0
                 },
                 {
                   "tMin": 550,
                   "tMax": 550,
-                  "S": 11.2
+                  "S": 20.0
                 },
                 {
                   "tMin": 600,
                   "tMax": 600,
-                  "S": 11.0
+                  "S": 20.0
                 },
                 {
                   "tMin": 650,
                   "tMax": 650,
-                  "S": 10.8
+                  "S": 20.0
+                },
+                {
+                  "tMin": 700,
+                  "tMax": 700,
+                  "S": 18.8
+                },
+                {
+                  "tMin": 750,
+                  "tMax": 750,
+                  "S": 16.7
+                },
+                {
+                  "tMin": 950,
+                  "tMax": 950,
+                  "S": 14.3
+                },
+                {
+                  "tMin": 1000,
+                  "tMax": 1000,
+                  "S": 11.0
+                },
+                {
+                  "tMin": 1050,
+                  "tMax": 1050,
+                  "S": 6.3
+                },
+                {
+                  "tMin": 1100,
+                  "tMax": 1100,
+                  "S": 2.8
                 }
               ]
             }
@@ -524,6 +944,56 @@
               "temps": [
                 {
                   "tMin": 100,
+                  "tMax": 100,
+                  "S": 20.0
+                },
+                {
+                  "tMin": 150,
+                  "tMax": 150,
+                  "S": 20.0
+                },
+                {
+                  "tMin": 200,
+                  "tMax": 200,
+                  "S": 20.0
+                },
+                {
+                  "tMin": 250,
+                  "tMax": 250,
+                  "S": 20.0
+                },
+                {
+                  "tMin": 300,
+                  "tMax": 300,
+                  "S": 20.0
+                },
+                {
+                  "tMin": 350,
+                  "tMax": 350,
+                  "S": 20.0
+                },
+                {
+                  "tMin": 400,
+                  "tMax": 400,
+                  "S": 20.0
+                },
+                {
+                  "tMin": 450,
+                  "tMax": 450,
+                  "S": 20.0
+                },
+                {
+                  "tMin": 500,
+                  "tMax": 500,
+                  "S": 20.0
+                },
+                {
+                  "tMin": 550,
+                  "tMax": 550,
+                  "S": 20.0
+                },
+                {
+                  "tMin": 600,
                   "tMax": 600,
                   "S": 20.0
                 },
@@ -541,6 +1011,16 @@
                   "tMin": 750,
                   "tMax": 750,
                   "S": 12.5
+                },
+                {
+                  "tMin": 950,
+                  "tMax": 950,
+                  "S": 8.5
+                },
+                {
+                  "tMin": 1000,
+                  "tMax": 1000,
+                  "S": 4.5
                 }
               ]
             }
@@ -552,6 +1032,51 @@
               "temps": [
                 {
                   "tMin": 100,
+                  "tMax": 100,
+                  "S": 25.0
+                },
+                {
+                  "tMin": 150,
+                  "tMax": 150,
+                  "S": 25.0
+                },
+                {
+                  "tMin": 200,
+                  "tMax": 200,
+                  "S": 25.0
+                },
+                {
+                  "tMin": 250,
+                  "tMax": 250,
+                  "S": 25.0
+                },
+                {
+                  "tMin": 300,
+                  "tMax": 300,
+                  "S": 25.0
+                },
+                {
+                  "tMin": 350,
+                  "tMax": 350,
+                  "S": 25.0
+                },
+                {
+                  "tMin": 400,
+                  "tMax": 400,
+                  "S": 25.0
+                },
+                {
+                  "tMin": 450,
+                  "tMax": 450,
+                  "S": 25.0
+                },
+                {
+                  "tMin": 500,
+                  "tMax": 500,
+                  "S": 25.0
+                },
+                {
+                  "tMin": 550,
                   "tMax": 550,
                   "S": 25.0
                 },
@@ -571,8 +1096,68 @@
           "A453_660_ClassA": [
             {
               "diaMin_in": 0.0,
-              "diaMax_in": 999.0,
+              "diaMax_in": 1000000000.0,
               "temps": [
+                {
+                  "tMin": 100,
+                  "tMax": 100,
+                  "S": 21.3
+                },
+                {
+                  "tMin": 150,
+                  "tMax": 150,
+                  "S": 21.3
+                },
+                {
+                  "tMin": 200,
+                  "tMax": 200,
+                  "S": 21.3
+                },
+                {
+                  "tMin": 250,
+                  "tMax": 250,
+                  "S": 21.3
+                },
+                {
+                  "tMin": 300,
+                  "tMax": 300,
+                  "S": 21.3
+                },
+                {
+                  "tMin": 350,
+                  "tMax": 350,
+                  "S": 21.3
+                },
+                {
+                  "tMin": 400,
+                  "tMax": 400,
+                  "S": 21.3
+                },
+                {
+                  "tMin": 450,
+                  "tMax": 450,
+                  "S": 21.3
+                },
+                {
+                  "tMin": 500,
+                  "tMax": 500,
+                  "S": 21.3
+                },
+                {
+                  "tMin": 550,
+                  "tMax": 550,
+                  "S": 21.3
+                },
+                {
+                  "tMin": 600,
+                  "tMax": 600,
+                  "S": 21.3
+                },
+                {
+                  "tMin": 650,
+                  "tMax": 650,
+                  "S": 21.3
+                },
                 {
                   "tMin": 950,
                   "tMax": 950,
@@ -589,8 +1174,68 @@
           "A453_660_ClassB": [
             {
               "diaMin_in": 0.0,
-              "diaMax_in": 999.0,
+              "diaMax_in": 1000000000.0,
               "temps": [
+                {
+                  "tMin": 100,
+                  "tMax": 100,
+                  "S": 21.3
+                },
+                {
+                  "tMin": 150,
+                  "tMax": 150,
+                  "S": 21.3
+                },
+                {
+                  "tMin": 200,
+                  "tMax": 200,
+                  "S": 21.3
+                },
+                {
+                  "tMin": 250,
+                  "tMax": 250,
+                  "S": 21.3
+                },
+                {
+                  "tMin": 300,
+                  "tMax": 300,
+                  "S": 21.3
+                },
+                {
+                  "tMin": 350,
+                  "tMax": 350,
+                  "S": 21.3
+                },
+                {
+                  "tMin": 400,
+                  "tMax": 400,
+                  "S": 21.3
+                },
+                {
+                  "tMin": 450,
+                  "tMax": 450,
+                  "S": 21.3
+                },
+                {
+                  "tMin": 500,
+                  "tMax": 500,
+                  "S": 21.3
+                },
+                {
+                  "tMin": 550,
+                  "tMax": 550,
+                  "S": 21.3
+                },
+                {
+                  "tMin": 600,
+                  "tMax": 600,
+                  "S": 21.3
+                },
+                {
+                  "tMin": 650,
+                  "tMax": 650,
+                  "S": 21.3
+                },
                 {
                   "tMin": 950,
                   "tMax": 950,
@@ -607,7 +1252,7 @@
           "A193_B8M_Class1_316": [
             {
               "diaMin_in": 0.0,
-              "diaMax_in": 999.0,
+              "diaMax_in": 1000000000.0,
               "temps": [
                 {
                   "tMin": 100,
@@ -678,6 +1323,184 @@
                   "tMin": 1000,
                   "tMax": 1000,
                   "S": 11.3
+                },
+                {
+                  "tMin": 1050,
+                  "tMax": 1050,
+                  "S": 11.2
+                },
+                {
+                  "tMin": 1100,
+                  "tMax": 1100,
+                  "S": 11.0
+                },
+                {
+                  "tMin": 1150,
+                  "tMax": 1150,
+                  "S": 9.8
+                },
+                {
+                  "tMin": 1200,
+                  "tMax": 1200,
+                  "S": 7.4
+                },
+                {
+                  "tMin": 1250,
+                  "tMax": 1250,
+                  "S": 5.5
+                },
+                {
+                  "tMin": 1300,
+                  "tMax": 1300,
+                  "S": 4.1
+                },
+                {
+                  "tMin": 1350,
+                  "tMax": 1350,
+                  "S": 3.1
+                },
+                {
+                  "tMin": 1400,
+                  "tMax": 1400,
+                  "S": 2.3
+                },
+                {
+                  "tMin": 1450,
+                  "tMax": 1450,
+                  "S": 1.7
+                },
+                {
+                  "tMin": 1500,
+                  "tMax": 1500,
+                  "S": 1.3
+                }
+              ]
+            }
+          ],
+          "A193_B8_Class1_304": [
+            {
+              "diaMin_in": 0.0,
+              "diaMax_in": 1000000000.0,
+              "temps": [
+                {
+                  "tMin": 100,
+                  "tMax": 100,
+                  "S": 18.8
+                },
+                {
+                  "tMin": 150,
+                  "tMax": 150,
+                  "S": 16.7
+                },
+                {
+                  "tMin": 200,
+                  "tMax": 200,
+                  "S": 15.0
+                },
+                {
+                  "tMin": 250,
+                  "tMax": 250,
+                  "S": 13.8
+                },
+                {
+                  "tMin": 300,
+                  "tMax": 300,
+                  "S": 12.9
+                },
+                {
+                  "tMin": 350,
+                  "tMax": 350,
+                  "S": 12.1
+                },
+                {
+                  "tMin": 400,
+                  "tMax": 400,
+                  "S": 12.0
+                },
+                {
+                  "tMin": 450,
+                  "tMax": 450,
+                  "S": 11.8
+                },
+                {
+                  "tMin": 500,
+                  "tMax": 500,
+                  "S": 11.5
+                },
+                {
+                  "tMin": 550,
+                  "tMax": 550,
+                  "S": 11.2
+                },
+                {
+                  "tMin": 600,
+                  "tMax": 600,
+                  "S": 11.0
+                },
+                {
+                  "tMin": 650,
+                  "tMax": 650,
+                  "S": 10.8
+                },
+                {
+                  "tMin": 950,
+                  "tMax": 950,
+                  "S": 10.6
+                },
+                {
+                  "tMin": 1000,
+                  "tMax": 1000,
+                  "S": 10.4
+                },
+                {
+                  "tMin": 1050,
+                  "tMax": 1050,
+                  "S": 10.1
+                },
+                {
+                  "tMin": 1100,
+                  "tMax": 1100,
+                  "S": 9.8
+                },
+                {
+                  "tMin": 1150,
+                  "tMax": 1150,
+                  "S": 7.7
+                },
+                {
+                  "tMin": 1200,
+                  "tMax": 1200,
+                  "S": 6.0
+                },
+                {
+                  "tMin": 1250,
+                  "tMax": 1250,
+                  "S": 4.7
+                },
+                {
+                  "tMin": 1300,
+                  "tMax": 1300,
+                  "S": 3.7
+                },
+                {
+                  "tMin": 1350,
+                  "tMax": 1350,
+                  "S": 2.9
+                },
+                {
+                  "tMin": 1400,
+                  "tMax": 1400,
+                  "S": 2.3
+                },
+                {
+                  "tMin": 1450,
+                  "tMax": 1450,
+                  "S": 1.8
+                },
+                {
+                  "tMin": 1500,
+                  "tMax": 1500,
+                  "S": 1.4
                 }
               ]
             }
@@ -688,6 +1511,7 @@
         "options": [
           "A194_2H",
           "A194_4",
+          "A194_4M",
           "A194_8_304",
           "A194_8M_316",
           "A194_2HM",
@@ -776,10 +1600,10 @@
           "allowCalculatedTorque": true,
           "target_method": "BOLT_STRESS_PCT_YIELD",
           "defaults": {
-            "boltStressPctYield_default": 0.40,
+            "boltStressPctYield_default": 0.4,
             "boltStressPctYield_allowed": [
-              0.30,
-              0.50
+              0.3,
+              0.5
             ]
           },
           "warnings": [
@@ -798,9 +1622,9 @@
           "allowCalculatedTorque": true,
           "target_method": "BOLT_STRESS_PCT_YIELD",
           "defaults": {
-            "boltStressPctYield_default": 0.40,
+            "boltStressPctYield_default": 0.4,
             "boltStressPctYield_allowed": [
-              0.30,
+              0.3,
               0.55
             ]
           },
@@ -822,8 +1646,8 @@
           "defaults": {
             "boltStressPctYield_default": 0.38,
             "boltStressPctYield_allowed": [
-              0.30,
-              0.50
+              0.3,
+              0.5
             ]
           },
           "warnings": [
@@ -842,9 +1666,9 @@
           "allowCalculatedTorque": true,
           "target_method": "BOLT_STRESS_PCT_YIELD",
           "defaults": {
-            "boltStressPctYield_default": 0.50,
+            "boltStressPctYield_default": 0.5,
             "boltStressPctYield_allowed": [
-              0.40,
+              0.4,
               0.65
             ]
           },
@@ -867,7 +1691,7 @@
             "boltStressPctYield_default": 0.48,
             "boltStressPctYield_allowed": [
               0.38,
-              0.60
+              0.6
             ]
           },
           "warnings": [
@@ -889,7 +1713,7 @@
             "boltStressPctYield_default": 0.55,
             "boltStressPctYield_allowed": [
               0.45,
-              0.70
+              0.7
             ]
           },
           "warnings": [
@@ -911,7 +1735,7 @@
             "boltStressPctYield_default": 0.55,
             "boltStressPctYield_allowed": [
               0.45,
-              0.70
+              0.7
             ]
           },
           "warnings": [
@@ -970,10 +1794,10 @@
           "allowCalculatedTorque": true,
           "target_method": "BOLT_STRESS_PCT_YIELD",
           "defaults": {
-            "boltStressPctYield_default": 0.30,
+            "boltStressPctYield_default": 0.3,
             "boltStressPctYield_allowed": [
-              0.20,
-              0.40
+              0.2,
+              0.4
             ]
           },
           "warnings": [
@@ -995,7 +1819,7 @@
             "boltStressPctYield_default": 0.45,
             "boltStressPctYield_allowed": [
               0.35,
-              0.60
+              0.6
             ]
           },
           "warnings": [

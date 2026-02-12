@@ -14,11 +14,18 @@ Flange Helper is a phone/tablet app that collects flange‑assembly data, perfor
   - Job creation/edit flow with persistent storage.
   - Flange form flow with extensive fields and torque pass checklist.
 - Storage usage meter on the start screen (750 MB budget).
-- Reference data file added for torque calculation.
-- Temperature‑based allowable stress support added for supported grades.
+- Reference data file added for torque calculation and allowable stress tables.
 - Bolt tightening sequences added to reference data (clockwise numbering; populated for all even counts 4–88).
 - Tightening sequence display wired into the flange form (numbering rule + sequence list).
 - Gasket logic added (defaults/allowed % yield, warnings, retorque guidance, and specified‑torque requirement for RTJ).
+- Nut pairing rules + warnings added (with override acknowledgement and report output).
+- Washer used dropdown + notes/warnings panel added.
+- Photo capture flow added (up to 4 photos with keep/retake/exit and thumbnails).
+- Signature capture added for contractor + facility reps.
+- PDF export implemented (single form per page, photo page when photos exist, signature boxes, units and pass ranges).
+- Adaptive app icon assets generated and wired.
+- Reference data parsing and torque math centralized in `FlangeMath`.
+- Unit test + instrumentation test added (round‑trip storage + math).
 
 ## Goal (What We’re Building)
 
@@ -60,9 +67,13 @@ Flange Helper is a phone/tablet app that collects flange‑assembly data, perfor
 
 ### Reference Data (Torque Calculation)
 - `app/src/main/assets/flange_reference.json`
-  - Diameter/TPI lookup, tensile stress area, and allowable stress vs temperature.
+  - Diameter/TPI lookup, tensile stress area, allowable stress values, gasket defaults, bolt sequences.
 - `app/src/main/java/com/kevin/flangejointassembly/ui/ReferenceData.kt`
   - Loads reference data and exposes helpers for torque calculation.
+- `app/src/main/java/com/kevin/flangejointassembly/ui/FlangeMath.kt`
+  - Central torque/diameter utilities, bolt sequence fallback, and stress lookup.
+- `app/src/main/java/com/kevin/flangejointassembly/ui/NutPairingConfig.kt`
+  - Loads nut‑pairing rules and evaluates mismatch warnings.
 
 ### Header / Back Button Style
 - `app/src/main/java/com/kevin/flangejointassembly/ui/components/FlangeHeader.kt`
@@ -105,12 +116,12 @@ Flange Helper is a phone/tablet app that collects flange‑assembly data, perfor
   - `F = As * S_ksi * 1000 * pctYield`
   - `T = (K * D * F) / 12`
 - If **Specified Target Torque** is entered, it overrides calculated torque.
+- Target bolt load `F` can be entered directly to skip yield‑% calculation.
 - Final target torque is what pass percentages apply to (per PCC‑1 style sequence).
-- Allowable stress at temperature is used when data is available for a grade; otherwise room‑temp Sy is used.
 - Gasket selection can set a default percent‑of‑yield and/or require a specified target torque.
+- The report prints units on all numeric values and shows pass percentages explicitly.
 
 ## Next Steps
 
 - Add remaining allowable stress data (B8, A453 660 Class C/D, B8M additional classes).
-- Implement photo capture, signatures, and PDF export.
 - Add bolt‑pattern diagram rendering.

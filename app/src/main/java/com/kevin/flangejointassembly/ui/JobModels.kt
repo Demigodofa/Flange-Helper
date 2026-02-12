@@ -36,6 +36,8 @@ data class FlangeFormItem(
     val fastenerDiameter: String,
     val threadSeries: String,
     val nutSpec: String,
+    val nutOverrideAcknowledged: Boolean,
+    val washerUsed: Boolean,
     val workingTempF: String,
     val roundedTempF: String,
     val torqueMethod: String,

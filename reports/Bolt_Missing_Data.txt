@@ -1,0 +1,8 @@
+Missing Allowable Stress at Temperature (no entries):
+A193_B8_Class1_304, A453_660_ClassC, A453_660_ClassD
+
+Missing Strength Ranges (no entries):
+None
+
+Strength Placeholders Present:
+A453_660_ClassA, A453_660_ClassB, A453_660_ClassC, A453_660_ClassD

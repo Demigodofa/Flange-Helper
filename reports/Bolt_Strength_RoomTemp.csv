@@ -1,0 +1,17 @@
+grade_key,dia_min_in,dia_max_in,Sy_ksi,Su_ksi,missing
+A193_B7,0.0,2.5,105,125,
+A193_B7,2.625,4.0,95,115,
+A193_B7,4.125,7.0,75,100,
+A193_B16,0.0,2.5,105,125,
+A193_B16,2.625,4.0,95,110,
+A193_B16,4.125,7.0,85,100,
+A193_B8_Class1_304,0.0,999.0,30,75,
+A193_B8M_Class1_316,0.0,999.0,30,75,
+A320_L7,0.0,2.5,105,125,
+A193_B7M,0.0,4.0,80,100,
+A193_B7M,4.125,7.0,75,100,
+A320_L7M,0.0,2.5,80,100,
+A453_660_ClassA,0.0,999.0,PLACEHOLDER_ksi_from_spec,PLACEHOLDER_ksi_from_spec,Sy_placeholder;Su_placeholder
+A453_660_ClassB,0.0,999.0,PLACEHOLDER_ksi_from_spec,PLACEHOLDER_ksi_from_spec,Sy_placeholder;Su_placeholder
+A453_660_ClassC,0.0,999.0,PLACEHOLDER_ksi_from_spec,PLACEHOLDER_ksi_from_spec,Sy_placeholder;Su_placeholder
+A453_660_ClassD,0.0,999.0,PLACEHOLDER_ksi_from_spec,PLACEHOLDER_ksi_from_spec,Sy_placeholder;Su_placeholder

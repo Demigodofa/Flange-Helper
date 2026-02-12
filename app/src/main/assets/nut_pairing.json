@@ -1,0 +1,93 @@
+{
+  "pairingRules": [
+    {
+      "bolt": {"spec":"SA-193","grade":"B7","class":null},
+      "recommendedNuts": [
+        {"nut":"A194_2H","label":"Commonly paired nut"},
+        {"nut":"A194_2HM","label":"Acceptable alternative (facility/spec dependent)"}
+      ],
+      "mismatchWarnings": [
+        {"ifNutNotInRecommended": true, "severity":"warn", "messageKey":"WARN_NUT_NOT_COMMON"}
+      ]
+    },
+    {
+      "bolt": {"spec":"SA-193","grade":"B7M","class":null},
+      "recommendedNuts": [
+        {"nut":"A194_2HM","label":"Commonly paired nut"}
+      ],
+      "specialWarnings": [
+        {"ifNutIs":"A194_2H", "severity":"high", "messageKey":"WARN_B7M_NOT_INTERCHANGEABLE_2H"}
+      ],
+      "mismatchWarnings": [
+        {"ifNutNotInRecommended": true, "severity":"high", "messageKey":"WARN_NUT_MISMATCH_HIGH"}
+      ]
+    },
+    {
+      "bolt": {"spec":"SA-193","grade":"B16","class":null},
+      "recommendedNuts": [
+        {"nut":"A194_7","label":"Commonly paired nut"}
+      ],
+      "mismatchWarnings": [
+        {"ifNutNotInRecommended": true, "severity":"warn", "messageKey":"WARN_NUT_NOT_COMMON"}
+      ]
+    },
+    {
+      "bolt": {"spec":"SA-320","grade":"L7","class":null},
+      "recommendedNuts": [
+        {"nut":"A194_7","label":"Commonly paired nut"},
+        {"nut":"A194_4","label":"Common pairing (facility/spec dependent)"}
+      ],
+      "infoWarnings": [
+        {"severity":"info", "messageKey":"INFO_L7_LOW_TEMP_NOTE"}
+      ],
+      "mismatchWarnings": [
+        {"ifNutNotInRecommended": true, "severity":"warn", "messageKey":"WARN_NUT_NOT_COMMON"}
+      ]
+    },
+    {
+      "bolt": {"spec":"SA-320","grade":"L7M","class":null},
+      "recommendedNuts": [
+        {"nut":"A194_7M","label":"Commonly paired nut"},
+        {"nut":"A194_4M","label":"Common pairing (facility/spec dependent)"}
+      ],
+      "infoWarnings": [
+        {"severity":"info", "messageKey":"INFO_L7_LOW_TEMP_NOTE"}
+      ],
+      "mismatchWarnings": [
+        {"ifNutNotInRecommended": true, "severity":"high", "messageKey":"WARN_NUT_MISMATCH_HIGH"}
+      ]
+    },
+    {
+      "bolt": {"spec":"SA-193","grade":"B8","class":null},
+      "recommendedNuts": [
+        {"nut":"A194_8_304","label":"Commonly paired nut (304)"},
+        {"nut":"A194_8M_316","label":"Allowed but dissimilar (verify corrosion/spec)"}
+      ],
+      "boltPropertyWarnings": [
+        {"ifBoltIsStainless": true, "severity":"warn", "messageKey":"WARN_STAINLESS_GALLING"}
+      ],
+      "mismatchWarnings": [
+        {"ifNutNotInRecommended": true, "severity":"warn", "messageKey":"WARN_NUT_NOT_COMMON"}
+      ]
+    },
+    {
+      "bolt": {"spec":"SA-193","grade":"B8M","class":null},
+      "recommendedNuts": [
+        {"nut":"A194_8M_316","label":"Commonly paired nut (316)"}
+      ],
+      "boltPropertyWarnings": [
+        {"ifBoltIsStainless": true, "severity":"warn", "messageKey":"WARN_STAINLESS_GALLING"}
+      ],
+      "mismatchWarnings": [
+        {"ifNutNotInRecommended": true, "severity":"warn", "messageKey":"WARN_NUT_NOT_COMMON"}
+      ]
+    }
+  ],
+  "messageCatalog": {
+    "WARN_STAINLESS_GALLING": "Stainless fasteners are prone to galling, which can cause false/inflated torque readings (torque rises without achieving proper clamp load). Recommendation: use lubricant/anti-seize on stainless threads and under the nut bearing surface.",
+    "WARN_NUT_NOT_COMMON": "Warning: Nut grade is not the common pairing for this bolt/stud. This may reduce reliability of achieved preload and can increase risk of thread damage or yielding. Verify with engineering/specs.",
+    "WARN_B7M_NOT_INTERCHANGEABLE_2H": "High warning: A194 2H is NOT interchangeable with the commonly paired nut for B7M. B7M is typically paired with A194 2HM. If you must use 2H, verify service requirements and facility spec before tightening.",
+    "WARN_NUT_MISMATCH_HIGH": "High warning: Nut grade mismatch for this bolting. Verify facility spec before tightening.",
+    "INFO_L7_LOW_TEMP_NOTE": "Note: L7/L7M are typically used for low-temperature service. If low-temp impact requirements apply, verify nut markings/requirements per facility spec."
+  }
+}

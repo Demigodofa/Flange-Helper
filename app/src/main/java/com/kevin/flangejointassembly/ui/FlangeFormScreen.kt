@@ -16,14 +16,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -52,6 +56,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -92,9 +97,11 @@ fun FlangeFormScreen(
 
     val context = LocalContext.current
     var referenceData by remember { mutableStateOf<ReferenceData.Data?>(null) }
+    var nutPairingConfig by remember { mutableStateOf<NutPairingConfig.Config?>(null) }
 
     LaunchedEffect(Unit) {
         referenceData = ReferenceData.load(context)
+        nutPairingConfig = NutPairingConfig.load(context)
     }
 
     val initial = initialForm
@@ -123,7 +130,8 @@ fun FlangeFormScreen(
     var fastenerDiameter by remember { mutableStateOf(initial?.fastenerDiameter.orEmpty()) }
     var threadSeries by remember { mutableStateOf(initial?.threadSeries.orEmpty()) }
     var nutSpec by remember { mutableStateOf(initial?.nutSpec.orEmpty()) }
-    var torqueMethod by remember { mutableStateOf(initial?.torqueMethod ?: "YIELD_PERCENT") }
+    var nutOverrideAcknowledged by remember { mutableStateOf(initial?.nutOverrideAcknowledged ?: false) }
+    var washerUsed by remember { mutableStateOf(initial?.washerUsed ?: false) }
     var targetBoltLoadF by remember { mutableStateOf(initial?.targetBoltLoadF.orEmpty()) }
     var pctYieldTarget by remember { mutableStateOf(initial?.pctYieldTarget ?: "0.50") }
     var pctYieldEdited by remember { mutableStateOf(false) }
@@ -160,6 +168,9 @@ fun FlangeFormScreen(
     var pass4Initials by remember { mutableStateOf(initial?.pass4Initials.orEmpty()) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showWrenchCalPicker by remember { mutableStateOf(false) }
+    var showNutOverride by remember { mutableStateOf(false) }
+    var showWasherNotes by remember { mutableStateOf(false) }
+    var photoSessionActive by remember { mutableStateOf(false) }
 
     val datePickerState = rememberDatePickerState(initialSelectedDateMillis = dateMillis)
     val wrenchCalPickerState = rememberDatePickerState(
@@ -268,12 +279,18 @@ fun FlangeFormScreen(
             title = { Text("Max photos taken") },
             text = { Text("You have taken 4 photos. Exit now?") },
             confirmButton = {
-                TextButton(onClick = { showMaxPhotosDialog = false }) {
+                TextButton(onClick = {
+                    showMaxPhotosDialog = false
+                    photoSessionActive = false
+                }) {
                     Text("Exit")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showMaxPhotosDialog = false }) {
+                TextButton(onClick = {
+                    showMaxPhotosDialog = false
+                    photoSessionActive = false
+                }) {
                     Text("Keep")
                 }
             }
@@ -341,12 +358,14 @@ fun FlangeFormScreen(
             pendingPhotoPath?.let { File(it).delete() }
             pendingPhotoUri = null
             pendingPhotoPath = null
+            photoSessionActive = false
         }
     }
 
     fun launchCamera() {
         if (photoUris.size >= 4) {
             showMaxPhotosDialog = true
+            photoSessionActive = false
             return
         }
         val photosDir = File(context.filesDir, "flange_helper/photos")
@@ -379,6 +398,9 @@ fun FlangeFormScreen(
                     showPhotoReview = false
                     if (photoUris.size >= 4) {
                         showMaxPhotosDialog = true
+                        photoSessionActive = false
+                    } else if (photoSessionActive) {
+                        launchCamera()
                     }
                 }) {
                     Text("Keep")
@@ -400,6 +422,7 @@ fun FlangeFormScreen(
                         pendingPhotoUri = null
                         pendingPhotoPath = null
                         showPhotoReview = false
+                        photoSessionActive = false
                     }) {
                         Text("Exit")
                     }
@@ -408,9 +431,9 @@ fun FlangeFormScreen(
         )
     }
 
-    val diameterIn = parseDiameterInches(fastenerDiameter)
-    val diameterKey = normalizeDiameterKey(fastenerDiameter)
-    val defaultThreadSeries = defaultThreadSeriesFor(diameterIn)
+    val diameterIn = FlangeMath.parseDiameterInches(fastenerDiameter)
+    val diameterKey = FlangeMath.normalizeDiameterKey(fastenerDiameter)
+    val defaultThreadSeries = FlangeMath.defaultThreadSeriesFor(diameterIn)
 
     LaunchedEffect(diameterKey) {
         if (threadSeries.isBlank() && defaultThreadSeries.isNotBlank()) {
@@ -420,28 +443,46 @@ fun FlangeFormScreen(
 
     val tpi = referenceData?.tpiLookup?.get(threadSeries)?.get(diameterKey)
     val asLookup = referenceData?.asLookup?.get(threadSeries)?.get(diameterKey)
-    val asIn2 = asLookup ?: calculateTensileStressArea(diameterIn, tpi)
+    val asIn2 = asLookup ?: FlangeMath.calculateTensileStressArea(diameterIn, tpi)
     val gradeKey = gradeKeyForSpec(fastenerSpec, fastenerClass)
-    val syKsi = gradeKey?.let { lookupSy(referenceData, it, diameterIn) }
+    val syKsi = gradeKey?.let { FlangeMath.lookupSy(referenceData, it, diameterIn) }
     val selectedGasket = referenceData?.gasketTypes?.firstOrNull { it.label == gasketType }
     val requiresSpecifiedTorque = selectedGasket?.allowCalculatedTorque == false ||
         selectedGasket?.targetMethod == "SPECIFIED_TARGET_TORQUE_REQUIRED" ||
         selectedGasket?.defaults?.specifiedTargetTorqueRequired == true
-    val tempOptions = remember(referenceData) { buildTemperatureOptions(referenceData) }
-    val workingTemp = workingTempF.toIntOrNull()
-    val allowable = lookupAllowableStress(referenceData, gradeKey, diameterIn, workingTemp)
+    val workingTemp = 100
+    val allowable = FlangeMath.lookupAllowableStress(referenceData, gradeKey, diameterIn, workingTemp)
     val strengthKsi = allowable?.s ?: syKsi
     val roundedTemp = allowable?.usedTemp
-    val usingAllowable = allowable != null
     val boltHoleCount = boltHoles.toIntOrNull()
     val boltSequence = boltHoleCount?.let {
-        referenceData?.boltSequenceLookup?.get(it) ?: generateBoltSequence(it)
+        referenceData?.boltSequenceLookup?.get(it) ?: FlangeMath.generateBoltSequence(it)
     }.orEmpty()
     val numberingDirectionText = referenceData?.boltNumberingDirection?.takeIf { it.isNotBlank() } ?: "CW"
+    val boltSpecKey = mapBoltSpecKey(fastenerSpec, fastenerClass)
+    val nutKey = mapNutKey(nutSpec)
+    val nutPairingEvaluation = NutPairingConfig.evaluate(nutPairingConfig, boltSpecKey, nutKey)
+    val requiresNutAck = nutPairingEvaluation?.requiresAck == true
+    val washerMessages = remember(boltSpecKey, nutKey, washerUsed) {
+        buildWasherMessages(
+            boltSpecKey = boltSpecKey,
+            nutKey = nutKey,
+            washerUsed = washerUsed
+        )
+    }
 
-    LaunchedEffect(tempOptions) {
-        if (workingTempF.isBlank() && tempOptions.isNotEmpty()) {
-            workingTempF = tempOptions.first().value
+    LaunchedEffect(washerMessages) {
+        if (washerMessages.isEmpty()) {
+            showWasherNotes = false
+        }
+    }
+
+    LaunchedEffect(referenceData) {
+        if (workingTempF.isBlank()) {
+            workingTempF = "100"
+        }
+        if (usedTempF.isBlank()) {
+            usedTempF = "100"
         }
     }
 
@@ -451,8 +492,14 @@ fun FlangeFormScreen(
             pctYieldTarget = String.format("%.2f", defaultPct)
         }
         if (requiresSpecifiedTorque) {
-            torqueMethod = "USER_INPUT"
             useCustomTorque = true
+        }
+    }
+
+    LaunchedEffect(requiresNutAck) {
+        if (!requiresNutAck) {
+            nutOverrideAcknowledged = false
+            showNutOverride = false
         }
     }
 
@@ -460,7 +507,12 @@ fun FlangeFormScreen(
         usedTempF = roundedTemp?.toString().orEmpty()
     }
 
-    val methodIsUserInput = torqueMethod == "USER_INPUT"
+    val methodIsUserInput = targetBoltLoadF.toDoubleOrNull() != null
+    val torqueMethodValue = when {
+        requiresSpecifiedTorque || useCustomTorque -> "SPECIFIED_TORQUE"
+        methodIsUserInput -> "USER_INPUT"
+        else -> "YIELD_PERCENT"
+    }
     val pctYield = parsePercentValue(pctYieldTarget)
     val boltLoadF = when {
         methodIsUserInput -> targetBoltLoadF.toDoubleOrNull()
@@ -488,7 +540,6 @@ fun FlangeFormScreen(
             if (asIn2 == null) add("Tensile stress area unavailable for selected diameter/thread series")
             if (gradeKey == null) add("Bolt grade is required for calculation")
             if (strengthKsi == null) add("Strength not available for selected grade/diameter")
-            if (usingAllowable && workingTemp == null) add("Working temperature is required")
             if (!requiresSpecifiedTorque && methodIsUserInput && targetBoltLoadF.toDoubleOrNull() == null) {
                 add("Target bolt load F is required")
             }
@@ -503,6 +554,9 @@ fun FlangeFormScreen(
             add("Custom final torque is enabled, but no torque value is entered")
         }
         if (torqueWet && lube?.nutFactorK == null) add("Lubricant selection is required for wet torque")
+        if (requiresNutAck && !nutOverrideAcknowledged) {
+            add("Nut mismatch requires acknowledgement before saving")
+        }
     }
 
     LaunchedEffect(calculatedTorque, calculatedEdited, useCustomTorque) {
@@ -990,6 +1044,160 @@ fun FlangeFormScreen(
             )
         }
 
+        if (nutPairingEvaluation != null) {
+            if (nutPairingEvaluation.recommended.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Recommended Nuts",
+                    style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.SemiBold),
+                    color = FlangeColors.TextPrimary
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    nutPairingEvaluation.recommended.forEach { rec ->
+                        Text(
+                            text = "• ${mapNutLabel(rec.nut)} — ${rec.label}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = FlangeColors.TextSecondary
+                        )
+                    }
+                }
+            }
+
+            if (nutPairingEvaluation.warnings.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Nut Warnings",
+                    style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.SemiBold),
+                    color = FlangeColors.TextPrimary
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    nutPairingEvaluation.warnings.forEach { warn ->
+                        val color = when (warn.severity.lowercase()) {
+                            "high" -> FlangeColors.DeleteButton
+                            "warn" -> Color(0xFFB45309)
+                            else -> FlangeColors.TextSecondary
+                        }
+                        Text(
+                            text = warn.message,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = color
+                        )
+                    }
+                }
+            }
+
+            if (requiresNutAck) {
+                Spacer(modifier = Modifier.height(8.dp))
+                if (!showNutOverride) {
+                    Button(
+                        onClick = { showNutOverride = true },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = FlangeColors.EditButton,
+                            contentColor = FlangeColors.EditButtonText
+                        )
+                    ) {
+                        Text("Proceed anyway (facility hardware)")
+                    }
+                } else {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(
+                            checked = nutOverrideAcknowledged,
+                            onCheckedChange = { nutOverrideAcknowledged = it }
+                        )
+                        Text("Acknowledged")
+                    }
+                    if (!nutOverrideAcknowledged) {
+                        Text(
+                            text = "Acknowledgement required to save.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = FlangeColors.DeleteButton
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+        LabeledField(label = "Washer used?") {
+            DropdownField(
+                value = if (washerUsed) "Yes" else "No",
+                options = washerOptions(),
+                placeholder = "Select",
+                onValueChange = { washerUsed = it == "Yes" }
+            )
+        }
+        Text(
+            text = "If unsure, select Yes (hardened flat washer recommended).",
+            style = MaterialTheme.typography.bodySmall,
+            color = FlangeColors.TextMuted
+        )
+
+        if (washerMessages.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "Notes / Warnings",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = FlangeColors.TextSecondary
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                androidx.compose.material3.Icon(
+                    imageVector = Icons.Filled.Warning,
+                    contentDescription = "Open notes",
+                    tint = Color(0xFFB45309),
+                    modifier = Modifier
+                        .size(22.dp)
+                        .clickable { showWasherNotes = true }
+                )
+            }
+            if (showWasherNotes) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = FlangeColors.CardBackground),
+                    border = BorderStroke(1.dp, FlangeColors.Divider)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Notes / Warnings",
+                                style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.SemiBold),
+                                color = FlangeColors.TextPrimary
+                            )
+                            androidx.compose.material3.Icon(
+                                imageVector = Icons.Filled.Close,
+                                contentDescription = "Close notes",
+                                tint = FlangeColors.TextMuted,
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .clickable { showWasherNotes = false }
+                            )
+                        }
+                        washerMessages.forEach { message ->
+                            val color = when (message.severity) {
+                                WasherSeverity.WARN -> Color(0xFFB45309)
+                                WasherSeverity.HIGH -> FlangeColors.DeleteButton
+                                WasherSeverity.INFO -> FlangeColors.TextSecondary
+                            }
+                            Text(
+                                text = message.message,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = color
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = "Torque",
@@ -1001,15 +1209,6 @@ fun FlangeFormScreen(
         )
         Spacer(modifier = Modifier.height(8.dp))
 
-        LabeledField(label = "Working Temperature ( F)") {
-            DropdownField(
-                value = workingTempF,
-                options = tempOptions,
-                placeholder = "Select temperature",
-                onValueChange = { workingTempF = it }
-            )
-        }
-
         if (requiresSpecifiedTorque) {
             Text(
                 text = "Specified target torque is required for this gasket type.",
@@ -1018,36 +1217,20 @@ fun FlangeFormScreen(
             )
             Spacer(modifier = Modifier.height(8.dp))
         } else {
-            LabeledField(label = "Torque Method") {
-                DropdownField(
-                    value = torqueMethod,
-                    options = torqueMethodOptions(),
-                    placeholder = "Select method",
-                    onValueChange = { torqueMethod = it }
+            LabeledField(label = "Target Bolt Load F (lbf)") {
+                OutlinedTextField(
+                    value = targetBoltLoadF,
+                    onValueChange = { targetBoltLoadF = it },
+                    singleLine = true,
+                    placeholder = { Text("Leave blank to calculate from yield %") },
+                    modifier = Modifier.fillMaxWidth()
                 )
-            }
-
-            if (torqueMethod == "USER_INPUT") {
-                LabeledField(label = "Target Bolt Load F (lbf)") {
-                    OutlinedTextField(
-                        value = targetBoltLoadF,
-                        onValueChange = { targetBoltLoadF = it },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
             }
         }
 
         if (strengthKsi != null) {
-            val enteredTemp = workingTempF.takeIf { it.isNotBlank() }
-            val strengthNote = if (usingAllowable && enteredTemp != null) {
-                "Using S = $strengthKsi ksi at ${enteredTemp} F"
-            } else {
-                "Using room-temp Sy = $strengthKsi ksi"
-            }
             Text(
-                text = strengthNote,
+                text = "Using S = $strengthKsi ksi",
                 style = MaterialTheme.typography.bodySmall,
                 color = FlangeColors.TextSecondary
             )
@@ -1073,9 +1256,9 @@ fun FlangeFormScreen(
                     color = FlangeColors.DeleteButton
                 )
             } else if (calculatedTorque != null) {
-                val methodLabel = if (requiresSpecifiedTorque) {
-                    "Specified torque required"
-                } else if (torqueMethod == "USER_INPUT") {
+                val methodLabel = if (requiresSpecifiedTorque || useCustomTorque) {
+                    "Specified torque"
+                } else if (methodIsUserInput) {
                     "F input"
                 } else {
                     "Yield % ${formatPercent(pctYield)}"
@@ -1199,7 +1382,10 @@ fun FlangeFormScreen(
         )
         Spacer(modifier = Modifier.height(8.dp))
         Button(
-            onClick = { launchCamera() },
+            onClick = {
+                photoSessionActive = true
+                launchCamera()
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(48.dp),
@@ -1371,6 +1557,7 @@ fun FlangeFormScreen(
 
         Spacer(modifier = Modifier.height(20.dp))
         Button(
+            enabled = !requiresNutAck || nutOverrideAcknowledged,
             onClick = {
                 onSave(
                     FlangeFormItem(
@@ -1401,9 +1588,11 @@ fun FlangeFormScreen(
                         fastenerDiameter = fastenerDiameter,
                         threadSeries = threadSeries,
                         nutSpec = nutSpec,
+                        nutOverrideAcknowledged = nutOverrideAcknowledged,
+                        washerUsed = washerUsed,
                         workingTempF = workingTempF,
                         roundedTempF = usedTempF,
-                        torqueMethod = torqueMethod,
+                        torqueMethod = torqueMethodValue,
                         targetBoltLoadF = targetBoltLoadF.trim(),
                         pctYieldTarget = pctYieldTarget.trim(),
                         tpiUsed = tpi?.toString().orEmpty(),
@@ -1843,36 +2032,6 @@ private fun buildReportLine(
         "Tightening order: sequential 1, 2, 3, 4 ..."
 }
 
-private fun generateBoltSequence(boltCount: Int): List<Int> {
-    if (boltCount < 4 || boltCount % 2 != 0) return emptyList()
-    val half = boltCount / 2
-    var pow2 = 1
-    var bits = 0
-    while (pow2 < half) {
-        pow2 = pow2 shl 1
-        bits += 1
-    }
-    val order = mutableListOf<Int>()
-    for (i in 0 until pow2) {
-        val rev = reverseBits(i, bits)
-        if (rev < half) {
-            order.add(rev)
-        }
-    }
-    val odds = order.map { 2 * it + 1 }
-    val evens = order.map { 2 * it + 2 }
-    return odds + evens
-}
-
-private fun reverseBits(value: Int, bitCount: Int): Int {
-    var v = value
-    var result = 0
-    repeat(bitCount) {
-        result = (result shl 1) or (v and 1)
-        v = v shr 1
-    }
-    return result
-}
 
 private fun gasketTypeOptions(data: ReferenceData.Data?): List<DropdownOption> {
     val fromData = data?.gasketTypes
@@ -1977,12 +2136,145 @@ private fun fastenerDiameterOptions(): List<DropdownOption> = listOf(
 private fun nutSpecOptions(): List<DropdownOption> = listOf(
     DropdownOption("A194 2H"),
     DropdownOption("A194 4"),
+    DropdownOption("A194 4M"),
     DropdownOption("A194 8 (304)"),
     DropdownOption("A194 8M (316)"),
     DropdownOption("A194 2HM"),
     DropdownOption("A194 7"),
     DropdownOption("A194 7M")
 )
+
+private fun mapNutKey(value: String): String? {
+    return when (value) {
+        "A194 2H" -> "A194_2H"
+        "A194 2HM" -> "A194_2HM"
+        "A194 4" -> "A194_4"
+        "A194 4M" -> "A194_4M"
+        "A194 7" -> "A194_7"
+        "A194 7M" -> "A194_7M"
+        "A194 8 (304)" -> "A194_8_304"
+        "A194 8M (316)" -> "A194_8M_316"
+        else -> null
+    }
+}
+
+private fun mapNutLabel(nutKey: String): String {
+    return when (nutKey) {
+        "A194_2H" -> "A194 2H"
+        "A194_2HM" -> "A194 2HM"
+        "A194_4" -> "A194 4"
+        "A194_4M" -> "A194 4M"
+        "A194_7" -> "A194 7"
+        "A194_7M" -> "A194 7M"
+        "A194_8_304" -> "A194 8 (304)"
+        "A194_8M_316" -> "A194 8M (316)"
+        else -> nutKey
+    }
+}
+
+private fun mapBoltSpecKey(spec: String, fastenerClass: String): BoltSpecKey? {
+    return when (spec) {
+        "A193 B7" -> BoltSpecKey("SA-193", "B7", null)
+        "A193 B7M" -> BoltSpecKey("SA-193", "B7M", null)
+        "A193 B16" -> BoltSpecKey("SA-193", "B16", null)
+        "A193 B8 (304)" -> BoltSpecKey("SA-193", "B8", null)
+        "A193 B8M (316)" -> BoltSpecKey("SA-193", "B8M", null)
+        "A320 L7" -> BoltSpecKey("SA-320", "L7", null)
+        "A320 L7M" -> BoltSpecKey("SA-320", "L7M", null)
+        "A453 Grade 660" -> {
+            if (fastenerClass.isBlank()) null else BoltSpecKey("SA-453", "660", "Class ${fastenerClass}")
+        }
+        else -> null
+    }
+}
+
+private data class WasherMessage(
+    val message: String,
+    val severity: WasherSeverity
+)
+
+private enum class WasherSeverity { HIGH, WARN, INFO }
+
+private fun washerOptions(): List<DropdownOption> = listOf(
+    DropdownOption("No"),
+    DropdownOption("Yes")
+)
+
+private fun isBoltStainless(boltSpecKey: BoltSpecKey?): Boolean {
+    return when (boltSpecKey?.grade) {
+        "B8", "B8M" -> true
+        else -> false
+    }
+}
+
+private fun isNutStainless(nutKey: String?): Boolean {
+    return when (nutKey) {
+        "A194_8_304", "A194_8M_316" -> true
+        else -> false
+    }
+}
+
+private fun isHighStrengthAlloy(boltSpecKey: BoltSpecKey?): Boolean {
+    return when (boltSpecKey?.grade) {
+        "B7", "B16", "L7", "L7M", "B7M" -> true
+        else -> false
+    }
+}
+
+private fun buildWasherMessages(
+    boltSpecKey: BoltSpecKey?,
+    nutKey: String?,
+    washerUsed: Boolean,
+    bearingSurfaceCondition: String = "unknown",
+    stainlessWasherAvailable: Boolean = false
+): List<WasherMessage> {
+    val messages = mutableListOf<WasherMessage>()
+    val stainlessPresent = isBoltStainless(boltSpecKey) || isNutStainless(nutKey)
+    val highStrengthAlloy = isHighStrengthAlloy(boltSpecKey)
+
+    if (stainlessPresent) {
+        messages.add(
+            WasherMessage(
+                "Stainless fasteners are prone to galling causing incorrect inflated false torque readings. It is suggested to always use lubricant with stainless fastners.",
+                WasherSeverity.WARN
+            )
+        )
+        if (!washerUsed) {
+            messages.add(
+                WasherMessage(
+                    if (stainlessWasherAvailable) "Use Stainless Flat washer + lubricant" else "Use Hardened Flat washer + lubricant",
+                    WasherSeverity.WARN
+                )
+            )
+        }
+        messages.add(
+            WasherMessage(
+                "For stainless bolting, washers + lubricant help reduce galling at the nut bearing surface.",
+                WasherSeverity.INFO
+            )
+        )
+        messages.add(
+            WasherMessage(
+                "Mixed stainless and carbon steel contact can increase corrosion risk in wet/salty environments. Verify facility corrosion/spec requirements.",
+                WasherSeverity.INFO
+            )
+        )
+    }
+
+    if (highStrengthAlloy &&
+        !washerUsed &&
+        bearingSurfaceCondition in setOf("unknown", "painted", "rough")
+    ) {
+        messages.add(
+            WasherMessage(
+                "A hardened flat washer can improve torque consistency by reducing embedment and providing a smoother bearing surface.",
+                WasherSeverity.INFO
+            )
+        )
+    }
+
+    return messages.distinctBy { it.message }
+}
 
 private fun lubricantOptions(): List<DropdownOption> = listOf(
     DropdownOption(
@@ -2017,23 +2309,6 @@ private fun lubricantOptions(): List<DropdownOption> = listOf(
     )
 )
 
-private fun torqueMethodOptions(): List<DropdownOption> = listOf(
-    DropdownOption(value = "YIELD_PERCENT", menuLabel = "Calculate from yield", displayLabel = "Calculate from yield"),
-    DropdownOption(value = "USER_INPUT", menuLabel = "Use F directly", displayLabel = "Use F directly")
-)
-
-private fun buildTemperatureOptions(data: ReferenceData.Data?): List<DropdownOption> {
-    val maxTemp = data?.allowableStressLookup
-        ?.values
-        ?.flatMap { it }
-        ?.flatMap { it.temps }
-        ?.maxOfOrNull { it.tMax }
-        ?: 1000
-    val minTemp = 100
-    val temps = (minTemp..maxTemp step 50).map { it.toString() }
-    return temps.map { DropdownOption(it) }
-}
-
 private fun parsePercentValue(text: String): Double? {
     val trimmed = text.trim()
     if (trimmed.isEmpty()) return null
@@ -2043,81 +2318,6 @@ private fun parsePercentValue(text: String): Double? {
 
 private fun formatPercent(value: Double?): String {
     return if (value == null) "n/a" else String.format("%.0f%%", value * 100.0)
-}
-
-private data class AllowableResult(
-    val s: Double,
-    val usedTemp: Int
-)
-
-private fun lookupAllowableStress(
-    data: ReferenceData.Data?,
-    gradeKey: String?,
-    diameterIn: Double?,
-    workingTempF: Int?
-): AllowableResult? {
-    if (data == null || gradeKey == null || diameterIn == null || workingTempF == null) return null
-    val ranges = data.allowableStressLookup[gradeKey] ?: return null
-    val range = ranges.firstOrNull { diameterIn >= it.diaMin && diameterIn <= it.diaMax } ?: return null
-
-    val direct = range.temps.firstOrNull { workingTempF >= it.tMin && workingTempF <= it.tMax }
-    if (direct != null) {
-        return AllowableResult(s = direct.s, usedTemp = direct.tMax)
-    }
-
-    val next = range.temps
-        .filter { it.tMax >= workingTempF }
-        .minByOrNull { it.tMax }
-        ?: return null
-
-    return AllowableResult(s = next.s, usedTemp = next.tMax)
-}
-
-private fun parseDiameterInches(value: String): Double? {
-    if (value.isBlank()) return null
-    val normalized = value.replace(" (in.)", "").trim()
-    return if (normalized.contains("-")) {
-        val parts = normalized.split("-")
-        if (parts.size == 2) {
-            val whole = parts[0].toDoubleOrNull() ?: return null
-            val frac = parseFraction(parts[1]) ?: return null
-            whole + frac
-        } else {
-            normalized.toDoubleOrNull()
-        }
-    } else {
-        parseFraction(normalized) ?: normalized.toDoubleOrNull()
-    }
-}
-
-private fun parseFraction(value: String): Double? {
-    return if (value.contains("/")) {
-        val parts = value.split("/")
-        if (parts.size == 2) {
-            val num = parts[0].toDoubleOrNull() ?: return null
-            val den = parts[1].toDoubleOrNull() ?: return null
-            if (den == 0.0) null else num / den
-        } else {
-            null
-        }
-    } else {
-        value.toDoubleOrNull()
-    }
-}
-
-private fun normalizeDiameterKey(value: String): String {
-    return value.replace(" (in.)", "").trim()
-}
-
-private fun defaultThreadSeriesFor(diameterIn: Double?): String {
-    if (diameterIn == null) return ""
-    return if (diameterIn >= 1.0) "8UN" else "UNC"
-}
-
-private fun calculateTensileStressArea(diameterIn: Double?, tpi: Double?): Double? {
-    if (diameterIn == null || tpi == null || tpi == 0.0) return null
-    val term = diameterIn - (0.9743 / tpi)
-    return 0.7854 * term * term
 }
 
 private fun gradeKeyForSpec(spec: String, fastenerClass: String): String? {
@@ -2134,10 +2334,5 @@ private fun gradeKeyForSpec(spec: String, fastenerClass: String): String? {
     }
 }
 
-private fun lookupSy(data: ReferenceData.Data?, gradeKey: String, diameterIn: Double?): Double? {
-    if (data == null || diameterIn == null) return null
-    val ranges = data.strengthLookup[gradeKey] ?: return null
-    return ranges.firstOrNull { diameterIn >= it.diaMin && diameterIn <= it.diaMax }?.sy
-}
 
 
