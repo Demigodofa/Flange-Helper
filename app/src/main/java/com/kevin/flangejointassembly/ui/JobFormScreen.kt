@@ -55,20 +55,19 @@ fun JobFormScreen(
 
     if (showDatePicker) {
         DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
+            onDismissRequest = { },
             confirmButton = {
                 TextButton(onClick = {
                     val selected = datePickerState.selectedDateMillis
                     if (selected != null) {
                         dateMillis = normalizePickerMillis(selected)
                     }
-                    showDatePicker = false
                 }) {
                     Text("OK")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
+                TextButton(onClick = { }) {
                     Text("Cancel")
                 }
             }
@@ -141,12 +140,12 @@ fun JobFormScreen(
                 androidx.compose.material3.Icon(
                     imageVector = Icons.Filled.DateRange,
                     contentDescription = "Select date",
-                    modifier = Modifier.clickable { showDatePicker = true }
+                    modifier = Modifier.clickable { }
                 )
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { showDatePicker = true }
+                .clickable { }
         )
 
         Spacer(modifier = Modifier.height(24.dp))
